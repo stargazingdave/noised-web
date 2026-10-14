@@ -1,0 +1,29 @@
+{
+  "name": "noised-storm-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=noised-storm && npm run build --workspace=@noised-storm/demo",
+    "dev": "npm run build --workspace=noised-storm && npm run dev --workspace=@noised-storm/demo",
+    "preview": "npm run preview --workspace=@noised-storm/demo",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test --workspace=noised-storm && npm run test --workspace=@noised-storm/demo",
+    "check": "npm run build && npm run typecheck && npm test",
+    "pack:library": "npm pack --workspace=noised-storm --pack-destination=artifacts",
+    "bench": "npm run bench --workspace=noised-storm",
+    "test:ui": "node scripts/ui-smoke.mjs",
+    "test:package": "node scripts/package-smoke.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  },
+  "packageManager": "npm@11.21.0"
+}

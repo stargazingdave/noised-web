@@ -1,0 +1,37 @@
+{
+  "name": "noised-storm",
+  "version": "0.1.0",
+  "description": "NoiseD Storm: procedural rain and thunder synthesis with an optional Rust/WebAssembly engine.",
+  "license": "ISC",
+  "author": "David Portal",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./rain.worklet.js": "./dist/worklet/rain.worklet.js",
+    "./noised_dsp.wasm": "./dist/wasm/noised_dsp.wasm"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run build:js && npm run build:wasm",
+    "build:js": "tsup src/index.ts --dts --format esm,cjs --out-dir dist --clean && tsup src/worklet/rain.worklet.ts --format esm --out-dir dist/worklet",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "test": "npm run build && node --test tests/*.test.mjs && cargo test --workspace --locked",
+    "test:browser": "npm run build && node tests/browser-smoke.mjs",
+    "typecheck": "tsc --noEmit",
+    "bench": "npm run build && node scripts/bench-rain.mjs",
+    "dev": "tsup src/index.ts --dts --format esm,cjs --sourcemap --watch",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
+  }
+}

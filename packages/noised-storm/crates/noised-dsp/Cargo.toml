@@ -1,0 +1,9 @@
+[package]
+name = "noised-dsp"
+version = "0.1.0"
+edition = "2021"
+license = "ISC"
+description = "Allocation-free rain synthesis kernel for Noised"
+
+[lib]
+crate-type = ["cdylib", "rlib"]

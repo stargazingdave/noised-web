@@ -1,0 +1,163 @@
+{
+  "masterVolume": 1,
+  "delayBetweenThunders": {
+    "min": 2000,
+    "max": 15000
+  },
+  "eqGains": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "rainParams": {
+    "volume": 0.5,
+    "noiseLevel": 0.5,
+    "noiseType": "pink",
+    "noiseFilterFreq": {
+      "value": 4000,
+      "osc": false,
+      "amp": 1000,
+      "freq": 0.25
+    },
+    "eqGains": [
+      -10.9,
+      -9.1,
+      -6.8,
+      -4.8,
+      0.3,
+      2.7,
+      4.8,
+      2.8,
+      -1.6,
+      -8.8
+    ],
+    "dropDryLevel": 0.13,
+    "dropWetLevel": 0.49,
+    "dropRate": 35,
+    "dropMinPitch": {
+      "value": 640,
+      "osc": false,
+      "amp": 100,
+      "freq": 0.1
+    },
+    "dropMaxPitch": {
+      "value": 1146,
+      "osc": false,
+      "amp": 500,
+      "freq": 0.1
+    },
+    "dropDecayTime": 0.35000000000000003,
+    "dropReverbLevel": {
+      "value": 0.5,
+      "osc": false,
+      "amp": 0.2,
+      "freq": 0.2
+    },
+    "dropPanRange": {
+      "value": 1,
+      "osc": false,
+      "amp": 0.5,
+      "freq": 0.1
+    },
+    "dropQ": 0.6000000000000001,
+    "on": true
+  },
+  "thunderParams": {
+    "volume": {
+      "value": 0.65,
+      "rand": true,
+      "dist": 0.2
+    },
+    "duration": {
+      "value": 3.3200000000000003,
+      "rand": true,
+      "dist": 1.9
+    },
+    "filterFreq": {
+      "value": 1400,
+      "rand": true,
+      "dist": 340
+    },
+    "burstCount": {
+      "value": 2,
+      "rand": true,
+      "dist": 1
+    },
+    "delayMs": 0,
+    "reverbDuration": {
+      "value": 5.25,
+      "rand": true,
+      "dist": 0.5
+    },
+    "reverbDecay": {
+      "value": 3.5,
+      "rand": true,
+      "dist": 0.5
+    },
+    "reverbWetLevel": {
+      "value": 0.4,
+      "rand": false,
+      "dist": 0.2
+    },
+    "subLevel": {
+      "value": 0.1,
+      "rand": false,
+      "dist": 0.1
+    },
+    "panRange": {
+      "value": 1,
+      "rand": false,
+      "dist": 0.5
+    },
+    "highPassFreq": {
+      "value": 20,
+      "rand": false,
+      "dist": 5
+    },
+    "crackleAmount": {
+      "value": 0.8,
+      "rand": true,
+      "dist": 0.2
+    },
+    "eqGains": [
+      -8,
+      -8.4,
+      -6.5,
+      1.3,
+      8.3,
+      1.9,
+      -4.7,
+      3.5,
+      8.7,
+      3.2
+    ],
+    "rumbleFreqStart": {
+      "value": 30,
+      "rand": false,
+      "dist": 5
+    },
+    "rumbleFreqEnd": {
+      "value": 20,
+      "rand": false,
+      "dist": 5
+    },
+    "rumbleVolume": {
+      "value": 0.05,
+      "rand": false,
+      "dist": 0.1
+    },
+    "rumbleDecay": {
+      "value": 5,
+      "rand": false,
+      "dist": 2
+    },
+    "on": true
+  }
+}
