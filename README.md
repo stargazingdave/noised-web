@@ -38,4 +38,4 @@ The player keeps presets and controls while paused, changes presets without recr
 
 ## Sound-quality research
 
-The current pass adds irregular rain arrivals with varied impact levels and decay lengths, smooth drop boundaries, and more layered thunder with shaped rumble and tapered tails. Presets and controls are preserved for listening feedback. See the library README for the synthesis boundary between Rust and Web Audio.
+Rain retains its earlier WASM timing and drop envelopes after listening feedback on the experimental variation. Thunder keeps the layered body, shaped rumble and tapered tails. Presets and controls are preserved for listening feedback. See the library README for the synthesis boundary between Rust and Web Audio.

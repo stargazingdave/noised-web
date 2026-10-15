@@ -30,7 +30,7 @@ Other bundlers can copy the worklet and WASM exports to their static asset direc
 
 The pure JavaScript rain engine is deprecated following listening comparisons. The comparison selector and switching API have been removed from the demo. Native constructors and V2 exports remain only for compatibility; use `createWasm` for new integrations. There is no automatic fallback to native rain.
 
-Rust generates the continuous white/pink noise and stereo drops inside an AudioWorklet. Drop arrivals are irregular, with varied impact levels and decay lengths; short windows soften the start and end of each filtered drop. The render loop uses preallocated memory and a fixed voice pool. Excess drops steal slots in round-robin order.
+Rust generates the continuous white/pink noise and stereo drops inside an AudioWorklet. Rain retains the earlier regular drop timing and direct decay control; experimental timing, impact-level and envelope variation was reverted after listening feedback. The render loop uses preallocated memory and a fixed voice pool. Excess drops steal slots in round-robin order.
 
 Thunder synthesis, EQ, filters and convolution still use Web Audio nodes. Thunder now combines a short bright crack with a darker, irregular rolling body, tapered noise tails and shaped sub rumble. This is a first sound-quality pass for listening feedback; it does not move thunder into Rust. No shared-memory headers or WASM threads are required.
 
@@ -47,6 +47,6 @@ npm test
 npm run dev
 ```
 
-The library build packages JS, declarations, the standalone worklet and the Rust release binary. Tests cover live controls, lifecycle races, WAV export, thunder sample boundaries, and the compiled WASM worklet. Rust tests check seeded block-size independence, irregular arrivals, drop boundaries and finite output under overload. Existing benchmark and browser checks remain available for development.
+The library build packages JS, declarations, the standalone worklet and the Rust release binary. Tests cover live controls, lifecycle races, WAV export, thunder sample boundaries, and the compiled WASM worklet. Rust tests check seeded block-size independence, reset behavior and finite output under overload. Existing benchmark and browser checks remain available for development.
 
 License: ISC. Author: David Portal.
