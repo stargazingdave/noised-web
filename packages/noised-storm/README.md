@@ -1,138 +1,52 @@
-# 🌧️ NoiseD Storm
+# NoiseD Storm
 
-A lightweight TypeScript library for procedural **rain** and **thunder** sound generation using the Web Audio API.
-Perfect for ambience apps, games, or chill projects.
+Procedural rain and thunder for ambience apps and games. This research version develops the Rust/WASM rain engine and includes a demo/player in the monorepo.
 
----
+## Installation and use
 
-## 🎧 Features
+Build a local tarball with `npm run pack:library` at the monorepo root, then install the resulting `artifacts/noised-storm-0.1.0.tgz` in another project. After publication, use `npm install noised-storm`.
 
-- 🌧️ Realistic rain synthesis with adjustable drop rate, pitch, decay, and EQ
-- ⚡ Procedural thunder bursts with reverb, stereo spread, and randomness
-- 🎚️ Full parameter control with support for oscillation and randomization
-- 📦 Easily importable into any modern JS/TS project
-- 🪶 Lightweight, no dependencies
-
----
-
-## 🚀 Installation
-
-```bash
-npm install noised-storm
-```
-
----
-
-## 🛠️ Usage
+Initialize from a user interaction. With Vite, import the packaged assets as URLs:
 
 ```ts
-import { RainGenerator, ThunderGenerator } from 'noised-storm';
-
-// Create audio context
-const audioCtx = new AudioContext();
-
-// Setup rain
-const rain = new RainGenerator(audioCtx, yourRainParams);
-rain.start();
-
-// Setup thunder
-const thunder = new ThunderGenerator(audioCtx, yourThunderParams);
-thunder.triggerThunder(); // on demand
-```
-
-## Optional Rust / WebAssembly rain backend
-
-The existing constructors use native Web Audio nodes. To use the Rust rain
-kernel, initialize it asynchronously and supply the worklet and WASM asset URLs.
-For example, with Vite's asset URL imports:
-
-```ts
-import { RainGenerator, NoiseDController } from 'noised-storm';
+import { NoiseDStorm } from 'noised-storm';
 import workletUrl from 'noised-storm/rain.worklet.js?url';
 import wasmUrl from 'noised-storm/noised_dsp.wasm?url';
 
 const ctx = new AudioContext();
-const rain = await RainGenerator.createWasm(ctx, { dropRate: 100 }, {
-  workletUrl,
-  wasmUrl,
-  maxVoices: 128, // fixed pool, 1–256
-  seed: 42,
-});
-rain.connect(ctx.destination);
-await rain.start(); // invoke playback from a user interaction
-rain.setParams({ dropRate: 200, noiseFilterFreq: { value: 2500 } });
-rain.stop();
-rain.destroy();
-
-// The controller can use the same optional backend for its rain generator.
-const ambience = await NoiseDController.createWasm(ctx, {}, { workletUrl, wasmUrl });
-await ambience.start();
-ambience.updateRainParams({ on: false });
-ambience.destroy();
+const storm = await NoiseDStorm.createWasm(ctx, {}, { workletUrl, wasmUrl });
+await storm.start();
+storm.updateRainParams({ dropRate: 100, noiseFilterFreq: { value: 2500 } });
+storm.updateThunderParams({ volume: { value: 0.4 } });
+storm.stop();
+storm.destroy();
 ```
 
-Other bundlers can copy `dist/worklet/rain.worklet.js` and
-`dist/wasm/noised_dsp.wasm` to a static asset directory and pass those URLs.
-Use HTTPS or localhost, allow the asset URLs in your CSP, and serve cross-origin
-assets with CORS enabled. Consumers do **not** need Rust installed. Initialization
-fails explicitly if AudioWorklet or either asset is unavailable; use the existing
-constructor when you want the native backend.
+`NoiseDStorm` aliases `NoiseDController`. For rain alone, use `RainGenerator.createWasm(ctx, params, options)`, connect it to a destination, then await `start()`. Options also accept a repeatable rain `seed` and a fixed `maxVoices` pool of 1–256 (default 128). Thunder randomness is independent of the rain seed.
 
-Rust runs inside an AudioWorklet, generating continuous white/pink noise and
-mixing bandpass-filtered, enveloped, stereo drops. The TypeScript graph retains
-EQ, noise filtering, wet/dry gains and native convolution. The render path uses
-preallocated memory and voices; excess drops steal pool slots in round-robin
-order. This is an alternative synthesis backend, so its drops can sound different
-from the native generator. Thunder remains native Web Audio. No shared-memory
-headers or WebAssembly threads are required.
+Other bundlers can copy the worklet and WASM exports to their static asset directory and supply those URLs. Consumers need no Rust toolchain. Use HTTPS or localhost, allow the asset URLs in your CSP, and enable CORS for cross-origin assets. Initialization fails explicitly when assets or AudioWorklet are unavailable.
 
-The WASM factory is available on the original `RainGenerator` and
-`NoiseDController`. The V2 exports remain native; they support nested live patches,
-and `NoiseDControllerV2.tick(dt)` takes **seconds**. Thunder delay controls remain
-in **milliseconds**. Stop/destroy cancels active and scheduled voices. Use
-`await controller.start()` to observe context resume errors.
-`renderToFile(durationSec)` schedules on the offline audio clock and retains the
-controller's selected rain backend.
+## Engine status
 
-## 📦 Build
-Library development requires Rust plus its WASM target:
+The pure JavaScript rain engine is deprecated following listening comparisons. The comparison selector and switching API have been removed from the demo. Native constructors and V2 exports remain only for compatibility; use `createWasm` for new integrations. There is no automatic fallback to native rain.
 
-```bash
-rustup target add wasm32-unknown-unknown
-```
+Rust generates the continuous white/pink noise and stereo drops inside an AudioWorklet. Drop arrivals are irregular, with varied impact levels and decay lengths; short windows soften the start and end of each filtered drop. The render loop uses preallocated memory and a fixed voice pool. Excess drops steal slots in round-robin order.
 
-```bash
+Thunder synthesis, EQ, filters and convolution still use Web Audio nodes. Thunder now combines a short bright crack with a darker, irregular rolling body, tapered noise tails and shaped sub rumble. This is a first sound-quality pass for listening feedback; it does not move thunder into Rust. No shared-memory headers or WASM threads are required.
+
+Live controls accept nested partial patches. Parameters and presets retain their existing meanings, though synthesized sound has changed. Thunder delay controls use milliseconds. Stop/destroy cancels active and scheduled sources. `renderToFile(durationSec)` renders a stereo WAV on the offline audio clock using the controller's rain backend.
+
+## Development
+
+Requires Node 22.12+, npm 11.21+, Rust and its `wasm32-unknown-unknown` target. From the monorepo root:
+
+```sh
 npm run build
-```
-
-This builds JS/types, the standalone worklet, and the Rust release binary into the
-same npm package. `npm run build:js` builds only the native API/worklet wrapper;
-`npm run build:wasm` builds and copies the kernel. `npm run dev` watches the
-TypeScript API; rerun the relevant build after changing the worklet or Rust code.
-
-```bash
 npm run typecheck
 npm test
-npm run bench
-```
-
-Tests cover live controls, lifecycle races, offline WAV export, and the actual
-compiled WASM kernel/worklet. The benchmark measures WASM rendering plus sample
-copying in Node, including median/p95 block time and memory stability; it excludes
-native effects and browser scheduling and does not claim a speedup over the
-native backend. Mobile CPU and audible glitches still need device measurements.
-
-For an optional real-browser integration check, install Playwright and Chrome,
-then run `npm run test:browser`. An existing Playwright installation can be supplied
-with `NOISED_PLAYWRIGHT_PATH`; `NOISED_BROWSER_CHANNEL` defaults to `chrome`.
-
-For dev mode with watch:
-```bash
 npm run dev
 ```
 
-## 🧙 Author
-The name is David Portal, hi 😊
-I'll soon add a website with more of my projects.
+The library build packages JS, declarations, the standalone worklet and the Rust release binary. Tests cover live controls, lifecycle races, WAV export, thunder sample boundaries, and the compiled WASM worklet. Rust tests check seeded block-size independence, irregular arrivals, drop boundaries and finite output under overload. Existing benchmark and browser checks remain available for development.
 
-The branded `NoiseDStorm` export is an alias of `NoiseDController`; both names are supported.
+License: ISC. Author: David Portal.

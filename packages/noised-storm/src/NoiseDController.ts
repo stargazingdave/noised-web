@@ -39,6 +39,7 @@ export class NoiseDController<T extends BaseAudioContext = AudioContext> {
     private startVersion = 0;
     private wasmOptions: WasmRainOptions | null = null;
 
+    /** @deprecated Native rain is retained for compatibility. Use the asynchronous createWasm factory. */
     constructor(ctx: T, params: DeepPartial<NoiseDParams> = {}) {
         this.ctx = ctx;
         this.params = mergeParams(_defaultNoiseDParams, params);

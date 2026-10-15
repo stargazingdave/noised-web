@@ -66,6 +66,7 @@ export class RainGenerator<T extends BaseAudioContext = AudioContext> {
     private lfoMap: Map<string, { osc: OscillatorNode; gain: GainNode }>;
     private readonly eqFrequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
+    /** @deprecated Native rain is retained for compatibility. Use the asynchronous createWasm factory. */
     constructor(audioCtx: T, params?: DeepPartial<RainParams>) {
         this.audioCtx = audioCtx;
         this.output = this.audioCtx.createGain();

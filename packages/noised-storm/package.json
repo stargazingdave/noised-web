@@ -1,7 +1,7 @@
 {
   "name": "noised-storm",
   "version": "0.1.0",
-  "description": "NoiseD Storm: procedural rain and thunder synthesis with an optional Rust/WebAssembly engine.",
+  "description": "NoiseD Storm: procedural rain with Rust/WebAssembly and layered Web Audio thunder.",
   "license": "ISC",
   "author": "David Portal",
   "type": "module",

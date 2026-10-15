@@ -9,6 +9,9 @@ const PARAM_COUNT: usize = 20;
 #[derive(Clone, Copy, Default)]
 struct Voice {
     remaining: u32,
+    total: u32,
+    edge_samples: f32,
+    level: f32,
     envelope: f32,
     decay: f32,
     left: f32,
@@ -29,7 +32,6 @@ pub struct Engine {
     output: [f32; MAX_BLOCK * 3],
     voices: [Voice; MAX_VOICES],
     pink: [f32; 7],
-    phase: f64,
     time: f64,
     next_voice: usize,
 }
@@ -59,7 +61,6 @@ impl Engine {
             output: [0.0; MAX_BLOCK * 3],
             voices: [Voice::default(); MAX_VOICES],
             pink: [0.0; 7],
-            phase: 0.0,
             time: 0.0,
             next_voice: 0,
         }
@@ -116,9 +117,14 @@ impl Engine {
         let omega = 2.0 * PI * freq / self.rate;
         let alpha = omega.sin() / (2.0 * self.params[2]);
         let inv_a0 = 1.0 / (1.0 + alpha);
-        let samples = (self.params[1] * self.rate).max(1.0) as u32;
+        // Different impact sizes share the same decay control without sounding identical.
+        let samples = (self.params[1] * self.rate * (0.75 + self.random() * 0.5)).max(4.0) as u32;
+        let level = 0.65 + self.random() * 0.55;
         self.voices[index] = Voice {
             remaining: samples,
+            total: samples,
+            edge_samples: (self.rate * 0.002).min(samples as f32 * 0.25).max(1.0),
+            level,
             envelope: 1.0,
             decay: (0.001_f32.ln() / samples as f32).exp(),
             left: angle.cos(),
@@ -134,9 +140,9 @@ impl Engine {
 
     fn process(&mut self, frames: usize) {
         for i in 0..frames.min(MAX_BLOCK) {
-            self.phase += self.params[0] as f64 / self.rate as f64;
-            if self.phase >= 1.0 {
-                self.phase -= 1.0;
+            // Independent per-sample arrivals remove the old metronomic drop cadence.
+            // At most one arrival per sample keeps overload work strictly bounded.
+            if self.random() < self.params[0] / self.rate {
                 self.spawn();
             }
             let white = self.random() * 2.0 - 1.0;
@@ -165,6 +171,11 @@ impl Engine {
                 let sample = voice.b0 * excitation + voice.z1;
                 voice.z1 = -voice.a1 * sample + voice.z2;
                 voice.z2 = voice.b2 * excitation - voice.a2 * sample;
+                // Window the filtered output too: high-Q ringing must end smoothly.
+                let attack = ((voice.total - voice.remaining) as f32 / voice.edge_samples).min(1.0);
+                let release = ((voice.remaining - 1) as f32 / voice.edge_samples).min(1.0);
+                let edge = attack.min(release);
+                let sample = sample * voice.level * edge * edge * (3.0 - 2.0 * edge);
                 left += sample * voice.left;
                 right += sample * voice.right;
                 voice.envelope *= voice.decay;
@@ -181,7 +192,6 @@ impl Engine {
         self.voices.fill(Voice::default());
         self.pink.fill(0.0);
         self.output.fill(0.0);
-        self.phase = 0.0;
         self.time = 0.0;
     }
 }
@@ -279,5 +289,42 @@ mod tests {
         e.params[0] = 0.0;
         e.process(128);
         assert!(e.output[MAX_BLOCK..].iter().all(|x| *x == 0.0));
+    }
+
+    #[test]
+    fn arrivals_vary_but_preserve_average_rate() {
+        let mut e = Engine::new(8000.0, 1, 42);
+        e.params[0] = 40.0;
+        e.params[1] = 0.001;
+        let mut arrivals = Vec::new();
+        for sample in 0..80000 {
+            let before = e.voices[0].remaining;
+            e.process(1);
+            if e.voices[0].remaining > before {
+                arrivals.push(sample);
+            }
+        }
+        // Broad bounds avoid treating a single seeded realization as an exact rate.
+        assert!((300..500).contains(&arrivals.len()));
+        let gaps: std::collections::HashSet<_> = arrivals.windows(2).map(|w| w[1] - w[0]).collect();
+        assert!(gaps.len() > 50);
+    }
+
+    #[test]
+    fn drop_edges_are_zero_even_with_high_q() {
+        let mut e = Engine::new(48000.0, 1, 42);
+        e.params[0] = 0.0;
+        e.params[1] = 0.01;
+        e.params[2] = 100.0;
+        e.spawn();
+        let length = e.voices[0].total as usize;
+        e.process(length + 1);
+        for channel in [1, 2] {
+            let samples = &e.output[channel * MAX_BLOCK..channel * MAX_BLOCK + length + 1];
+            assert_eq!(samples[0], 0.0);
+            assert_eq!(samples[length - 1], 0.0);
+            assert_eq!(samples[length], 0.0);
+            assert!(samples.iter().any(|x| x.abs() > 0.0));
+        }
     }
 }

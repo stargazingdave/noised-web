@@ -263,3 +263,30 @@ test('zero duration controls remain valid for the player', () => {
     assert.ok(ctx.buffers.every(buffer => buffer.length > 0));
     thunder.destroy();
 });
+
+
+test('thunder bodies and tails have finite, silent sample boundaries across sample rates', () => {
+    for (const rate of [8000, 48000, 96000]) {
+        for (const duration of [0, 0.02, 1]) {
+            const ctx = new Context();
+            ctx.sampleRate = rate;
+            const thunder = new ThunderGenerator(ctx, {
+                duration: { value: duration }, burstCount: { value: 1 },
+                rumbleDecay: { value: 0 },
+            });
+            thunder.triggerThunder();
+            const sources = ctx.nodes.filter(node => node.kind === 'source' && node.buffer);
+            assert.equal(sources.length, 2);
+            for (const source of sources) {
+                const data = source.buffer.getChannelData(0);
+                assert.ok(data.every(Number.isFinite));
+                assert.ok(data[0] === 0);
+                assert.ok(data.at(-1) === 0);
+                assert.ok(data.some(value => Math.abs(value) > 0));
+            }
+            thunder.stop();
+            assert.ok(sources.every(source => source.stopped && source.disconnected));
+            thunder.destroy();
+        }
+    }
+});

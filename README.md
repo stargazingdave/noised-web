@@ -13,7 +13,7 @@ Requires Node 22.12+, npm 11.21+, Rust and the `wasm32-unknown-unknown` target.
     npx npm@11.21.0 install
     npm run dev
 
-The player opens at http://127.0.0.1:5173. It consumes the local npm workspace package and uses the WASM rain engine.
+The player opens at http://127.0.0.1:5173. It consumes the local npm workspace package and uses the WASM rain engine. The pure JavaScript rain route is deprecated; the comparison selector has been removed. Thunder and effects still use Web Audio.
 
     npm run build
     npm run typecheck
@@ -35,3 +35,7 @@ See packages/noised-storm/README.md for the public API and asset URL setup. No c
 After building, `npm run test:ui` checks the player in installed Chrome and saves desktop/mobile previews and downloads under `artifacts/`. `npm run test:package` packs the library and installs it in an independent temporary consumer. Playwright is installed locally; use `NOISED_BROWSER_CHANNEL` to select another installed browser.
 
 The player keeps presets and controls while paused, changes presets without recreating the audio graph, supports rain/thunder enable switches, and downloads parameter JSON or a ten-second stereo WAV. The Rust backend requires HTTPS or localhost.
+
+## Sound-quality research
+
+The current pass adds irregular rain arrivals with varied impact levels and decay lengths, smooth drop boundaries, and more layered thunder with shaped rumble and tapered tails. Presets and controls are preserved for listening feedback. See the library README for the synthesis boundary between Rust and Web Audio.

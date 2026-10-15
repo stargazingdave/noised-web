@@ -1,4 +1,5 @@
 import { createImpulseResponse } from "./functions/createImpulseResponse";
+import { fillThunderNoise, scheduleRumbleEnvelope } from "./functions/fillThunderNoise";
 import { RandParam } from "./types/RandParam";
 import { DeepPartial, mergeParams } from "./params";
 export type ThunderParamsLimits = Record<keyof ThunderParams, { min: number; max: number }>;
@@ -222,7 +223,7 @@ export class ThunderGenerator<T extends BaseAudioContext = AudioContext> {
                 ? this.params.rumbleVolume.value + (Math.random() * this.params.rumbleVolume.dist)
                 : this.params.rumbleVolume.value
             : 0.2;
-        const rumbleDecay = this.params.rumbleDecay?.value !== undefined
+        const requestedRumbleDecay = this.params.rumbleDecay?.value !== undefined
             ? this.params.rumbleDecay.rand
                 ? this.params.rumbleDecay.value + (Math.random() * this.params.rumbleDecay.dist)
                 : this.params.rumbleDecay.value
@@ -243,26 +244,28 @@ export class ThunderGenerator<T extends BaseAudioContext = AudioContext> {
                 : this.params.volume.value
             : 0.5;
 
+        const rumbleDecay = Number.isFinite(requestedRumbleDecay) ? Math.max(0.001, requestedRumbleDecay) : 8;
         const now = atTime + delay / 1000;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = "sine";
         osc.frequency.setValueAtTime(rumbleFreqStart, now);
         osc.frequency.linearRampToValueAtTime(rumbleFreqEnd, now + rumbleDecay);
-        gain.gain.setValueAtTime(rumbleVolume, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + rumbleDecay);
+        scheduleRumbleEnvelope(gain.gain, rumbleVolume, now, rumbleDecay);
         osc.connect(gain).connect(this.eqBands[0]);
         this.trackSources([osc], [osc, gain]);
         osc.start(now);
         osc.stop(now + rumbleDecay);
 
+        let burstTime = now;
         for (let i = 0; i < burstCount; i++) {
-            const burstDelay = 200 + Math.random() * 400;
             this._playSingleBurst(
                 duration * (0.8 + Math.random() * 0.4),
                 (volume / this.params.volume.value) * (0.7 + Math.random() * 0.6),
-                now + burstDelay * i / 1000
+                burstTime
             );
+            // Accumulate spacing so later echoes cannot jump ahead of earlier ones.
+            burstTime += 0.2 + Math.random() * 0.4;
         }
     }
 
@@ -321,12 +324,7 @@ export class ThunderGenerator<T extends BaseAudioContext = AudioContext> {
         const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * duration, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
 
-        for (let i = 0; i < data.length; i++) {
-            const buildUp = Math.min(1, i / (this.ctx.sampleRate * (duration * 0.25)));
-            const decay = Math.exp(-i / (this.ctx.sampleRate * duration));
-            const noise = (Math.random() * 2 - 1) * Math.pow(Math.random(), 2);
-            data[i] = noise * decay * buildUp;
-        }
+        fillThunderNoise(data, this.ctx.sampleRate, false, crackleAmount);
 
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
@@ -341,10 +339,8 @@ export class ThunderGenerator<T extends BaseAudioContext = AudioContext> {
         highpass.frequency.value = highPassFreq;
 
         const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.exponentialRampToValueAtTime(volume * 0.8, now + 0.05);
-        gain.gain.exponentialRampToValueAtTime(volume * 0.5, now + duration * 0.9);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + duration * 3);
+        // The buffer carries its own attack, rolling envelope and release.
+        gain.gain.setValueAtTime(volume * 0.8, now);
 
         const pan = this.ctx.createStereoPanner();
         const basePan = (Math.random() * 2 - 1) * (panRange * 0.3);
@@ -373,8 +369,7 @@ export class ThunderGenerator<T extends BaseAudioContext = AudioContext> {
         rumbleOsc.frequency.linearRampToValueAtTime(15, now + duration);
 
         const subGain = this.ctx.createGain();
-        subGain.gain.setValueAtTime(subLevel * volume * 0.6, now);
-        subGain.gain.exponentialRampToValueAtTime(0.001, now + duration * 2.5);
+        scheduleRumbleEnvelope(subGain.gain, subLevel * volume * 0.4, now, duration * 2.5);
 
         rumbleOsc.connect(subGain).connect(this.eqBands[0]);
         rumbleOsc.start(now);
@@ -382,12 +377,7 @@ export class ThunderGenerator<T extends BaseAudioContext = AudioContext> {
 
         const tailBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * duration * 1.5, this.ctx.sampleRate);
         const tailData = tailBuffer.getChannelData(0);
-        let lastOut = 0;
-        for (let i = 0; i < tailData.length; i++) {
-            const white = Math.random() * 2 - 1;
-            lastOut = (lastOut + 0.02 * white * crackleAmount) / (1.02 + crackleAmount * 0.05);
-            tailData[i] = lastOut * 1.5 * Math.exp(-i / (this.ctx.sampleRate * duration));
-        }
+        fillThunderNoise(tailData, this.ctx.sampleRate, true, crackleAmount);
 
         const brown = this.ctx.createBufferSource();
         brown.buffer = tailBuffer;
@@ -402,7 +392,6 @@ export class ThunderGenerator<T extends BaseAudioContext = AudioContext> {
 
         const brownGain = this.ctx.createGain();
         brownGain.gain.setValueAtTime(volume * 0.6, now);
-        brownGain.gain.exponentialRampToValueAtTime(0.001, now + duration * 2.5);
 
         brown.connect(brownHighPass).connect(brownLowpass).connect(brownGain).connect(this.eqBands[0]);
 
