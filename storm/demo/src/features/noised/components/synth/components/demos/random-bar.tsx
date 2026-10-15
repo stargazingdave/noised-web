@@ -50,7 +50,7 @@ export const RandomBar = ({ param }: Readonly<{ param: RandParam }>) => {
     ctx.stroke();
 
     // Value bar
-    ctx.fillStyle = '#de006b';
+    ctx.fillStyle = '#7fb9ca';
     ctx.fillRect(width / 2 - 20, valueY, 40, height - valueY);
   }, [param, randVal, size]);
 

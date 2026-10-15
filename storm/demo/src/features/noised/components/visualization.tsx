@@ -103,7 +103,7 @@ export function Visualization({
             context.clearRect(0, 0, canvasSize.width, canvasSize.height);
             context.beginPath();
             context.lineWidth = 2;
-            context.strokeStyle = "#e7ddb0";
+            context.strokeStyle = "#9cd8e4";
 
             const sliceWidth = canvasSize.width / data.length;
             for (let index = 0; index < data.length; index += 1) {

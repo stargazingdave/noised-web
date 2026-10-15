@@ -33,7 +33,7 @@ export function SineWave({ param }: Readonly<{ param: OscParam }>) {
 
             context.lineTo(canvas.width, canvas.height);
             context.closePath();
-            context.fillStyle = "#de006b";
+            context.fillStyle = "#7fb9ca";
             context.fill();
             animationFrameId = window.requestAnimationFrame(draw);
         };

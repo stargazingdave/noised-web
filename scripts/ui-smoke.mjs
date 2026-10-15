@@ -48,6 +48,12 @@ try {
     });
     await page.goto(url);
     await page.getByRole('heading', { name: 'NoiseD Storm', exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), true);
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(5, 8, 17)');
+    assert.ok(await page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage.includes('spaceship-stars.svg')));
+    assert.equal((await page.request.get(url + '/images/spaceship-stars.svg')).status(), 200);
+    await page.screenshot({ path: path.join(artifacts, 'demo-holographic-desktop.png'), fullPage: true });
+    await page.getByRole('button', { name: 'Light theme', exact: true }).click();
     await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('far-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 0);
     assert.equal(await page.getByRole('button', { name: 'Play Storm' }).getAttribute('aria-pressed'), 'false');
@@ -107,7 +113,7 @@ try {
     await page.screenshot({ path: path.join(artifacts, 'demo-mobile.png'), fullPage: true });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
     await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
-    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(23, 23, 23)');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(5, 8, 17)');
     for (const [tab, instructions] of [
         ['Rain Controls', 'Oscillating Parameter Controller'],
         ['Thunder Controls', 'Random Parameter Controller'],
@@ -126,6 +132,14 @@ try {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('tab', { name: 'Rain Controls' }).click();
     await page.screenshot({ path: path.join(artifacts, 'demo-desktop-dark.png'), fullPage: true });
+    for (const width of [320, 390, 768, 1024]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const tab of ['Master Controls', 'Rain Controls', 'Thunder Controls']) {
+            await page.getByRole('tab', { name: tab }).click();
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), tab + ' overflows at ' + width);
+            assert.ok(await page.locator('.control-group-body').evaluateAll(groups => groups.every(group => group.scrollWidth <= group.clientWidth + 1)), tab + ' has clipped controls at ' + width);
+        }
+    }
     assert.equal(await page.getByRole('alert').count(), 0);
     assert.deepEqual(errors, []);
     console.log('UI integration passed: presets while paused/playing, cancelled startup, live volume, enable toggles, parameter/WAV downloads, light/dark layouts and mobile help popovers.');

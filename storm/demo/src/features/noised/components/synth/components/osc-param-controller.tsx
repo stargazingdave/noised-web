@@ -1,7 +1,7 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { OscParam } from '../types/osc-param';
 import { AmpToggleSwitch } from 'noised-ui';
-import { Knob } from 'noised-ui';
+import { ThemedKnob as Knob } from './themed-knob';
 import React, { FC, useState } from 'react';
 import { IoHelp } from 'react-icons/io5';
 import { SineWave } from './demos/sine-wave';
@@ -63,9 +63,6 @@ export const OscParamController: React.FC<OscParamControllerProps> = ({
             label="Value"
             size={80}
             trackWidth={0}
-            colors={{
-              face: '#de006b',
-            }}
           />
         </div>
 
@@ -89,9 +86,6 @@ export const OscParamController: React.FC<OscParamControllerProps> = ({
               size={50}
               disabled={!param.osc}
               trackWidth={0}
-              colors={{
-                face: '#de006b',
-              }}
             />
             <Knob
               value={param.freq}
@@ -103,9 +97,6 @@ export const OscParamController: React.FC<OscParamControllerProps> = ({
               size={50}
               disabled={!param.osc}
               trackWidth={0}
-              colors={{
-                face: '#de006b',
-              }}
             />
           </div>
         </div>

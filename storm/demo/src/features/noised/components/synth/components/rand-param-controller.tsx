@@ -64,9 +64,6 @@ export const RandParamController: React.FC<RandParamControllerProps> = ({
             step={step}
             label="Value"
             size={80}
-            colors={{
-              face: '#de006b',
-            }}
           />
         </div>
 
@@ -90,9 +87,6 @@ export const RandParamController: React.FC<RandParamControllerProps> = ({
               label="Dist"
               size={50}
               disabled={!param.rand}
-              colors={{
-                face: '#de006b',
-              }}
             />
           </div>
         </div>

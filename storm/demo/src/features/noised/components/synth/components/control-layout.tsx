@@ -65,8 +65,8 @@ export function RangeControl({ label, range, onChange, min = 0, max = 1, step = 
         <div className="control-range">
             <span className="control-range-label">{label}</span>
             <div className="control-pair">
-                <ThemedKnob label="Min" value={range.min} min={min} max={max} step={step} onChange={(value) => onChange("min", value)} colors={{ face: "#de006b" }} />
-                <ThemedKnob label="Max" value={range.max} min={min} max={max} step={step} onChange={(value) => onChange("max", value)} colors={{ face: "#de006b" }} />
+                <ThemedKnob label="Min" value={range.min} min={min} max={max} step={step} onChange={(value) => onChange("min", value)} />
+                <ThemedKnob label="Max" value={range.max} min={min} max={max} step={step} onChange={(value) => onChange("max", value)} />
             </div>
         </div>
     );

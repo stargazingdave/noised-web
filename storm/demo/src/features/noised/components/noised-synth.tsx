@@ -45,8 +45,8 @@ export function NoisedSynth() {
     const { actions, activePresetId, analyser, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav } = useNoisedController();
     const [selectedTab, setSelectedTab] = useState<ControlTab>("master");
     const equalizerColors = resolvedTheme === "dark"
-        ? { background: "#1a1a1a", Hz: "#fff", dB: "#fff" }
-        : { background: "#fff", Hz: "#000", dB: "#000" };
+        ? { background: "#142932", bar: "linear-gradient(0deg, #345a68, #9cd8e4)", Hz: "#9bb6c2", dB: "#9bb6c2" }
+        : { background: "#ccdde2", bar: "linear-gradient(0deg, #739eac, #367184)", Hz: "#365b69", dB: "#365b69" };
 
     return (
         <div className="storm-player">
@@ -55,7 +55,7 @@ export function NoisedSynth() {
                     <Visualization analyser={analyser} isPlaying={isRunning} type="waveform" barCount={48} />
                 </div>
                 <div className="storm-toolbar">
-                    <div className="storm-brand"><img alt="" width={64} height={64} src="/images/noised-logo-icon.png" /><div><p className="storm-brand-title">Storm Player</p><p className="storm-brand-description">Listen. Adjust. Make it yours.</p></div></div>
+                    <div className="storm-brand"><div><p className="storm-brand-description">Your storm, your sound.</p><p className="storm-brand-title">Storm Player</p></div><span className="storm-status" data-running={isRunning} role="status"><span aria-hidden="true" />{isStarting ? 'Starting…' : isRunning ? 'Playing' : 'Standby'}</span></div>
                     <div className="storm-player-actions">
                         <label className="storm-preset">
                             <span>Preset</span>
@@ -81,7 +81,7 @@ export function NoisedSynth() {
                             onClick={() => void toggle()}
                             type="button"
                         >
-                            <img alt="" aria-hidden className="storm-play-logo" height={48} src="/images/noised-logo-icon.png" width={48} />
+                            <svg aria-hidden="true" className="storm-play-icon" viewBox="0 0 20 20" width="18" height="18">{isRunning || isStarting ? <path d="M6 4h3v12H6zm5 0h3v12h-3z" fill="currentColor" /> : <path d="m6 3 11 7-11 7z" fill="currentColor" />}</svg>
                             {isStarting ? "Cancel start" : isRunning ? "Pause Storm" : "Play Storm"}
                         </button>
                         <Tooltip>
@@ -92,7 +92,7 @@ export function NoisedSynth() {
                                     onClick={() => downloadJson(params)}
                                     type="button"
                                 >
-                                    <IoSave aria-hidden size={50} />
+                                    <IoSave aria-hidden size={21} />
                                 </button>
                             </TooltipTrigger>
                             <TooltipContent side="top">Download the current parameters as JSON</TooltipContent>

@@ -74,6 +74,11 @@ The player preserves controls while paused, changes presets without recreating
 the audio graph, supports rain/thunder enable switches, and downloads parameter
 JSON or a ten-second stereo WAV.
 
+The demo's flat starfield uses the same seeded stars and sky palette as the
+sibling `David/spaceship` project, projected to a standalone SVG. Regenerate it
+with `node scripts/generate-starfield.mjs`; the source project is not needed.
+The demo defaults to a dark holographic theme, with a saved light-theme option.
+
 ## Sound-quality research
 
 Rain retains its earlier WASM timing and drop envelopes after listening feedback

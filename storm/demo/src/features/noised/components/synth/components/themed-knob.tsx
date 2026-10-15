@@ -5,14 +5,16 @@ import { useTheme } from '@/components/theme/theme-provider';
 export const ThemedKnob: FC<KnobProps> = (props) => {
     const { resolvedTheme } = useTheme();
     const customProps: Partial<KnobProps> = {
-        trackWidth: 0,
+        trackWidth: 1,
         colors: {
-            face: "#de006b",
-            labels: resolvedTheme === 'dark' ? '#fff' : '#000',
+            face: resolvedTheme === 'dark' ? '#244552' : '#b0cbd1',
+            body: resolvedTheme === 'dark' ? '#263b47' : '#9cb6c1',
+            indicator: resolvedTheme === 'dark' ? '#bdeaf3' : '#174d5b',
+            track: resolvedTheme === 'dark' ? '#577f8c' : '#6f929f',
+            labels: resolvedTheme === 'dark' ? '#c5dce3' : '#244753',
         }
     };
-    // Combine props, preferring props over customProps
-    const combinedProps = { ...customProps, ...props };
+    const combinedProps = { ...customProps, ...props, colors: { ...customProps.colors, ...props.colors } };
     return (
         <Knob {...combinedProps} />
     );

@@ -26,10 +26,10 @@ function isTheme(value: string | null): value is Theme {
 }
 
 function readTheme(): Theme {
-    if (typeof window === "undefined") return "system";
+    if (typeof window === "undefined") return "dark";
 
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return isTheme(storedTheme) ? storedTheme : "system";
+    return isTheme(storedTheme) ? storedTheme : "dark";
 }
 
 function readResolvedTheme(): ResolvedTheme {
@@ -73,11 +73,11 @@ function updateTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: Readonly<{ children: ReactNode }>) {
-    const theme = useSyncExternalStore<Theme>(subscribeToTheme, readTheme, () => "system");
+    const theme = useSyncExternalStore<Theme>(subscribeToTheme, readTheme, () => "dark");
     const resolvedTheme = useSyncExternalStore<ResolvedTheme>(
         subscribeToTheme,
         readResolvedTheme,
-        () => "light",
+        () => "dark",
     );
     const value = useMemo(
         () => ({ theme, resolvedTheme, setTheme: updateTheme }),
