@@ -48,23 +48,25 @@ for (const [component, props] of [[Knob, { value: 0, onChange() {} }], [Equalize
 }
 if (typeof require('noised-ui').Knob !== 'function') throw new Error('Missing UI CommonJS export');
 if (typeof require('noised-ui').Visualization !== 'function') throw new Error('Missing Visualization CommonJS export');
+const unstyled = await import('noised-ui/unstyled');
+if (typeof unstyled.Equalizer !== 'function' || typeof require('noised-ui/unstyled').Knob !== 'function') throw new Error('Missing explicit-style UI exports');
 if (!readFileSync(require.resolve('noised-ui/styles.css'), 'utf8').includes('.noised-knob')) throw new Error('Missing UI CSS export');
 `], { cwd: consumer, stdio: 'inherit' });
 if (result.status !== 0) throw new Error('Standalone consumer check failed');
 
-// Exercise the published library with its own CSS, outside Storm and the workspace.
-await writeFile(path.join(consumer, 'index.html'), '<!doctype html><html><head><title>NoiseD UI consumer</title></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
+// Exercise automatic styles without importing CSS, outside Storm and the workspace.
+await writeFile(path.join(consumer, 'index.html'), '<!doctype html><html><head><title>NoiseD UI consumer</title><style>.noised-knob { font-family: consumer-override; }</style></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>');
 await writeFile(path.join(consumer, 'main.tsx'), `
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Knob, Equalizer, AmpToggleSwitch, Visualization, type KnobProps, type VisualizationProps, type VisualizationStyle } from 'noised-ui';
-import 'noised-ui/styles.css';
+import type { KnobProps as ExplicitKnobProps } from 'noised-ui/unstyled';
 function App() {
     const [gain, setGain] = useState(0);
     const [gains, setGains] = useState([0, 0, 0]);
     const [enabled, setEnabled] = useState(true);
     const [compactGains, setCompactGains] = useState(Array(10).fill(0));
-    const props: KnobProps = { label: 'Gain', value: gain, onChange: setGain, min: -12, max: 12, step: 0.5 };
+    const props: KnobProps & ExplicitKnobProps = { label: 'Gain', value: gain, onChange: setGain, min: -12, max: 12, step: 0.5 };
     const visualStyle: VisualizationStyle = 'valve';
     const visualizationProps: VisualizationProps = { analyser: null, isPlaying: false, visualStyle, minFrequency: 20, maxFrequency: 12000, height: 80, label: 'Standalone visualization' };
     return <div>
@@ -84,10 +86,20 @@ function App() {
 }
 createRoot(document.getElementById('root')!).render(<App />);
 `);
+await writeFile(path.join(consumer, 'explicit.html'), '<!doctype html><html><head><title>Explicit UI styles</title></head><body><div id="root"></div><script type="module" src="/explicit.tsx"></script></body></html>');
+await writeFile(path.join(consumer, 'explicit.tsx'), `
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { Knob } from 'noised-ui/unstyled';
+import 'noised-ui/styles.css';
+createRoot(document.getElementById('root')!).render(<Knob label="Explicit gain" value={0} onChange={() => {}} />);
+`);
 await writeFile(path.join(consumer, 'types.cts'), `import { Knob, type KnobProps } from 'noised-ui';
 const props: KnobProps = { value: 0, onChange(value: number) {} }; void Knob; void props;
 import { Visualization, type VisualizationProps } from 'noised-ui';
 const visualization: VisualizationProps = { analyser: null, isPlaying: false }; void Visualization; void visualization;
+import { Equalizer as ExplicitEqualizer, type EqualizerProps } from 'noised-ui/unstyled';
+const eq: EqualizerProps = { gains: [0], freqs: [1000], onChange() {} }; void ExplicitEqualizer; void eq;
 `);
 const compiler = require.resolve('typescript/bin/tsc');
 for (const [module, resolution, file] of [['ESNext', 'bundler', 'main.tsx'], ['NodeNext', 'NodeNext', 'types.cts']]) {
@@ -95,7 +107,9 @@ for (const [module, resolution, file] of [['ESNext', 'bundler', 'main.tsx'], ['N
         '--target', 'ES2022', '--module', module, '--moduleResolution', resolution, file], { cwd: consumer, stdio: 'inherit' });
     if (checked.status !== 0) throw new Error(`Standalone ${module} declarations failed`);
 }
-await build({ root: consumer, configFile: false, logLevel: 'warn', build: { outDir: 'dist' } });
+await build({ root: consumer, configFile: false, logLevel: 'warn', build: {
+    outDir: 'dist', rolldownOptions: { input: { index: path.join(consumer, 'index.html'), explicit: path.join(consumer, 'explicit.html') } },
+} });
 const server = await preview({ root: consumer, configFile: false, logLevel: 'warn', preview: { host: '127.0.0.1', port: 0 } });
 let browser;
 try {
@@ -104,6 +118,7 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
+    assert.equal(await page.locator('style[data-noised-ui]').count(), 1, 'Automatic styles were lost during production bundling');
     const knob = page.getByRole('slider', { name: 'Gain', exact: true });
     await knob.press('ArrowUp');
     assert.equal(await knob.getAttribute('aria-valuenow'), '0.5');
@@ -187,12 +202,19 @@ try {
         display: getComputedStyle(document.querySelector('.noised-knob')).display,
         switchWidth: document.querySelector('.noised-switch__button').getBoundingClientRect().width,
         bodyMargin: getComputedStyle(document.body).margin,
+        knobFont: getComputedStyle(document.querySelector('.noised-knob')).fontFamily,
     }));
     assert.equal(styles.display, 'flex');
     assert.equal(styles.switchWidth, 24);
     assert.equal(styles.bodyMargin, '8px'); // The library must not reset the host page.
+    assert.equal(styles.knobFont, 'consumer-override', 'Automatic styles override host CSS');
+    assert.equal(await page.locator('style[data-noised-ui]').count(), 1);
     await mkdir(path.join(root, 'artifacts'), { recursive: true });
     await page.screenshot({ path: path.join(root, 'artifacts/ui-standalone.png'), fullPage: true });
+    await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/explicit.html`);
+    await page.getByRole('slider', { name: 'Explicit gain', exact: true }).waitFor();
+    assert.equal(await page.locator('style[data-noised-ui]').count(), 0);
+    assert.equal(await page.locator('.noised-knob').evaluate(el => getComputedStyle(el).display), 'flex');
     assert.deepEqual(errors, []);
     console.log('Standalone UI passed: ESM/CommonJS, both declaration formats, scoped CSS, pointer/keyboard controls, disabled state and SSR.');
 } finally {

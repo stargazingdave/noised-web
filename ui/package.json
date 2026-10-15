@@ -1,7 +1,7 @@
 {
   "name": "noised-ui",
   "version": "0.1.0",
-  "description": "NoiseD UI: React controls for audio interfaces, with standalone CSS.",
+  "description": "NoiseD UI: React audio controls with automatic scoped styling.",
   "license": "ISC",
   "author": "David Portal",
   "type": "module",
@@ -19,17 +19,29 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./unstyled": {
+      "import": {
+        "types": "./dist/unstyled.d.ts",
+        "default": "./dist/unstyled.js"
+      },
+      "require": {
+        "types": "./dist/unstyled.d.cts",
+        "default": "./dist/unstyled.cjs"
+      }
+    }
   },
   "files": [
     "dist"
   ],
   "sideEffects": [
+    "./dist/index.js",
+    "./dist/index.cjs",
     "**/*.css"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --out-dir dist --clean && node scripts/copy-css.mjs",
-    "dev": "tsup src/index.ts --dts --format esm,cjs --out-dir dist --watch --onSuccess \"node scripts/copy-css.mjs\"",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test tests/*.test.mjs",
     "prepack": "npm run build"

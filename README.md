@@ -1,135 +1,97 @@
 # NoiseD Web
 
-The web monorepo for NoiseD Storm and NoiseD UI. The sibling `../vst-plugins`
-folder is a separate Git repository for native JUCE plugins.
+NoiseD Storm and NoiseD UI are independent libraries managed by one npm workspace.
+The Storm demo consumes both; it is private and is not published.
 
-```text
-web/
-  storm/
-    engine/   noised-storm: JavaScript API, Rust/WASM rain, Web Audio thunder
-    demo/     Private React player consuming both workspace libraries
-  ui/         noised-ui: reusable React audio controls and standalone CSS
-  scripts/    Browser and package integration checks
-  artifacts/  Local tarballs, screenshots and downloaded audio (ignored)
-```
+| Directory | Package / purpose | Documentation |
+| --- | --- | --- |
+| `storm/engine` | `noised-storm`: Rust/WASM rain and Web Audio thunder | [Engine API, assets and lifecycle](storm/engine/README.md) |
+| `ui` | `noised-ui`: React audio controls with automatic scoped styling | [Components, styling and SSR](ui/README.md) |
+| `storm/demo` | Vite/React player using both libraries | [Layout, presets and export](storm/demo/README.md) |
+| `scripts` | Browser and standalone-package checks | Verification below |
+| `artifacts` | Ignored screenshots, downloaded audio and tarballs | Local output only |
 
-One root npm workspace and lockfile manage all three packages. `noised-storm`
-and `noised-ui` have independent package manifests and can be released separately.
-The UI library has no Storm or audio-engine dependency. The native VST repository
-keeps its own C++/JUCE UI implementation and build system.
+The sibling `../vst-plugins` directory is a separate Git repository for native
+JUCE plugins. It has its own C++ build and UI; this workspace does not build it.
 
-## Develop
+## Set up and develop
 
-Requires Node 22.12+, npm 11.21+, Rust and the `wasm32-unknown-unknown` target.
+Source builds require Node 22.12+, npm 11.21+, Rust stable and the
+`wasm32-unknown-unknown` target. Run workspace commands from this directory:
 
 ```sh
 rustup target add wasm32-unknown-unknown
-npx npm@11.21.0 install
+npx npm@11.21.0 ci
 npm run dev
 ```
 
-Run commands from this `web` directory. The player opens at
-http://127.0.0.1:5173. `dev` builds both libraries before starting Vite.
-For UI-library development, run `npm run dev:ui` in another terminal to watch
-its source and rebuild the package. The demo and library use plain CSS;
-no Tailwind configuration or CSS generation is needed.
+The player opens at http://127.0.0.1:5173/. `dev` builds the two libraries before
+starting Vite. Use `npm run dev:ui` in a second terminal to watch UI source and CSS.
+Engine changes require rebuilding the engine; demo source uses Vite hot reload.
 
-```sh
-npm run build
-npm run typecheck
-npm test
-npm run preview
-npm run bench
-npm run check
-```
+| Command | Result |
+| --- | --- |
+| `npm run build` | Builds engine JS/WASM, UI entries/styles/types, then `storm/demo/dist` |
+| `npm run typecheck` | Checks all three TypeScript workspaces |
+| `npm test` | Engine Node/Rust tests, UI tests, demo tests |
+| `npm run check` | Build, typecheck and unit tests |
+| `npm run preview` | Serves the built demo at http://127.0.0.1:4173/ |
+| `npm run test:ui` | Chrome checks against the built demo: playback, controls, themes, files and responsive layout |
+| `npm run test:package` | Installs packed libraries in an independent consumer; checks exports, types, SSR, assets, automatic/explicit styles and interactions |
+| `npm run bench` | Rain performance benchmark |
 
-## Deploy the Storm demo to GitHub Pages
+Browser checks need installed Chrome. Set `NOISED_BROWSER_CHANNEL` to another
+installed Playwright browser channel, or `NOISED_PLAYWRIGHT_PATH` to a Playwright
+module path. Screenshots, downloads and tarballs are saved under `artifacts/`.
 
-The [Pages workflow](.github/workflows/deploy-pages.yml) runs on every push to
-`main`, or manually from the repository's Actions tab. It installs the workspace
-dependencies with the lockfile, sets up Rust's `wasm32-unknown-unknown` target,
-and builds the engine, UI library, and demo in dependency order. Only
-`storm/demo/dist` is uploaded and deployed through the `github-pages`
-environment. Actions are pinned to verified commit SHAs.
-
-In Settings → Pages, select **GitHub Actions** as the source. No deployment token
-or custom secrets are needed; the deployment job uses GitHub's built-in token.
-The site for this repository is https://stargazingdave.github.io/noised-web/.
-
-The workflow reads the site path from GitHub Pages metadata and passes it as
-`VITE_BASE_PATH` to Vite. Local development defaults to `/`. Logo, backgrounds,
-JavaScript, CSS, WASM and AudioWorklet assets use the build's base path.
-
-To verify a Pages-style production build locally, set `VITE_BASE_PATH` to
-`/noised-web/` in your shell, then run:
-
-```sh
-npm run build
-npm run test:ui
-npm run preview
-```
-
-Keep that environment variable set for the browser check and preview, and open
-http://127.0.0.1:4173/noised-web/. Unset it for normal development. GitHub's
-deployment URL is also linked from the workflow's `github-pages` environment.
-Audio starts when the visitor presses Play; Pages provides the HTTPS required
-by AudioWorklet.
-
-## Package the libraries
+## Consume or package a library
 
 ```sh
 npm run pack:library
 npm run pack:ui
 ```
 
-These commands produce `artifacts/noised-storm-0.1.0.tgz` and
-`artifacts/noised-ui-0.1.0.tgz`. Install either tarball in another project with
-`npm install /path/to/file.tgz`. Neither library requires this monorepo checkout.
-The demo is private and is never published.
+Install `artifacts/noised-storm-0.1.0.tgz` or `artifacts/noised-ui-0.1.0.tgz` in
+another project. Package versions are independent. Consumers need neither this
+checkout nor Rust; worklet/WASM assets are included in the engine package.
+React 18 or 19 is a UI peer dependency. Storm itself has no React dependency.
 
-- [Storm API and asset setup](storm/engine/README.md)
-- [UI installation, styling and component API](ui/README.md)
+```tsx
+import { Knob, Equalizer, Visualization } from 'noised-ui';
+// Styles are installed automatically in the browser. No CSS import is needed.
+```
 
-The Storm tarball includes JavaScript, declarations, WASM and the standalone
-worklet. Consumers do not need a Rust toolchain. Rain uses Rust/WASM; thunder
-and effects use Web Audio. The Rust backend requires HTTPS or localhost.
+For SSR first-paint CSS or explicit style control, use `noised-ui/unstyled`
+with `noised-ui/styles.css`; see the [UI README](ui/README.md). Neither library
+requires Tailwind or a theme provider. Storm audio needs browser Web Audio,
+HTTPS or localhost, and initialization from a user interaction.
 
-## Verification
+## GitHub Pages deployment
 
-After building, `npm run test:ui` checks the player in installed Chrome and
-saves desktop/mobile previews and JSON/WAV downloads under `artifacts/`.
-`npm run test:package` installs the packed libraries in an independent temporary
-consumer and checks their public exports, assets and UI behavior. Use
-`NOISED_BROWSER_CHANNEL` to select another installed browser.
+Live demo: https://stargazingdave.github.io/noised-web/.
 
-The player preserves controls while paused, changes presets without recreating
-the audio graph, supports rain/thunder enable switches, and downloads parameter
-named preset JSON files or a stereo WAV with a selectable length (1–300 seconds).
-The Presets tool loads JSON into the live player and keeps imported presets in
-the session list. It also accepts the earlier plain parameter JSON files.
+The [Pages workflow](.github/workflows/deploy-pages.yml) deploys each push to
+`main` and supports manual runs from Actions. It installs locked npm dependencies
+and Rust's WASM target, builds both libraries before the demo, then uploads only
+`storm/demo/dist` to the `github-pages` environment. Actions use pinned commits.
 
-The demo's flat starfield uses the same seeded stars and sky palette as the
-sibling `David/spaceship` project, projected to a standalone SVG. Regenerate it
-with `node scripts/generate-starfield.mjs`; the source project is not needed.
-The demo defaults to a dark holographic theme. The compact sticky navbar offers
-saved light, dark, and system theme choices. The player has playback/status, a live
-visualization window, and master volume below its title and actions. A button
-beside the window switches between waveform and frequency bars; the style
-picker underneath offers Phosphor, Aurora, Valve, and Matrix. Aurora layers
-colored ribbons over a nebula background with glass reflections; Valve glows
-with warm amber tube filaments. The shared UI library owns all four renderers.
-Translucent panels reveal the
-starfield and reflected light. The EQ button switches to the master EQ, passing
-the live visualization as its `barsBackground`, behind only the frequency bars.
-The scale, frequency labels and Flat button stay clear. The toolbar below
-contains Presets and Export tools. Focused player components share one
-`NoisedControllerProvider` for playback, controls, visualization and file tools.
-Rain and Thunder tabs include
-independent enable switches.
+Set Settings > Pages > Source to **GitHub Actions**. No custom deployment token
+or secrets are required. The deployment job uses GitHub's built-in token.
+Its environment links to the deployed URL; check the Actions run for failures.
 
-## Sound-quality research
+Vite receives `VITE_BASE_PATH` from Pages metadata. Development defaults to `/`.
+To check a production project path locally in PowerShell:
 
-Rain retains its earlier WASM timing and drop envelopes after listening feedback
-on the experimental variation. Thunder keeps the layered body, shaped rumble and
-tapered tails. Presets and controls are preserved for listening feedback. See the
-Storm library README for the synthesis boundary between Rust and Web Audio.
+```powershell
+$env:VITE_BASE_PATH = '/noised-web/'
+npm run build
+npm run test:ui
+npm run preview
+# Open http://127.0.0.1:4173/noised-web/
+# After stopping preview:
+Remove-Item Env:VITE_BASE_PATH
+```
+
+On POSIX shells, use `export VITE_BASE_PATH=/noised-web/` and unset it afterward.
+Keep the same base path for build, browser check and preview. Logo, starfields,
+JS, CSS, WASM and AudioWorklet URLs respect the configured path.

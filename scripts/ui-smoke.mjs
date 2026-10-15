@@ -65,6 +65,7 @@ try {
     });
     await page.goto(url + '/');
     await page.getByRole('heading', { name: 'NoiseD Storm', exact: true }).waitFor();
+    assert.equal(await page.locator('style[data-noised-ui]').count(), 1);
     const masterControls = page.getByRole('region', { name: 'Master controls', exact: true });
     const player = page.getByRole('region', { name: 'Storm Player', exact: true });
     assert.equal(await page.getByRole('tab').count(), 2);

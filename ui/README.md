@@ -1,7 +1,7 @@
 # NoiseD UI
 
 React controls for audio interfaces: `Knob`, `Equalizer`, `AmpToggleSwitch`, and `Visualization`.
-The package includes ESM, CommonJS, TypeScript declarations and scoped plain CSS.
+The package includes ESM, CommonJS, TypeScript declarations and automatic scoped styles.
 It has no dependency on NoiseD Storm, Tailwind, or a theme provider. The
 visualization reads a caller-provided Web Audio `AnalyserNode`; it does not
 create an audio context or start playback.
@@ -15,12 +15,13 @@ npm install /path/to/noised-ui-0.1.0.tgz
 ```
 
 React is a peer dependency; the package accepts React 18 or 19. The monorepo
-currently tests with React 19. Import the stylesheet once in your app entry point.
+currently tests with React 19. No CSS import is needed for the default entry point.
+Importing it in the browser installs one `<style data-noised-ui>` element in
+`document.head`. Server-side imports never access the DOM.
 
 ```tsx
 import { useState } from 'react';
 import { Knob, Equalizer, AmpToggleSwitch } from 'noised-ui';
-import 'noised-ui/styles.css';
 
 export function AudioControls() {
   const [volume, setVolume] = useState(0.5);
@@ -94,7 +95,9 @@ import { Visualization } from 'noised-ui';
 <Visualization analyser={analyser} isPlaying={isPlaying} type="spectrum"
   visualStyle="aurora" maxFrequency={12000} height={80} color="#9cd8e4" />
 <Equalizer gains={gains} freqs={frequencies} onChange={setBand}
-  onReset={setGains} />
+  onReset={setGains}
+  barsBackground={<Visualization analyser={analyser} isPlaying={isPlaying}
+    type="spectrum" visualStyle="aurora" height="100%" />} />
 ```
 
 Prop/color interfaces are exported alongside the components. Use a positive
@@ -119,14 +122,52 @@ for wrappers that forward a density option.
 
 ## Styling
 
-`noised-ui/styles.css` provides component styles without a global page reset.
+Default imports include the component CSS and install it automatically in the
+browser. The stylesheet is inserted before existing head content so host styles
+can override it, including when the library is loaded lazily. ESM/CommonJS
+copies and multiple component instances share one style element per document.
+Production bundlers retain this initialization through the package's
+`sideEffects` metadata. It does not add a global page reset.
+
 Classes are prefixed `noised-`. Controls inherit text color and can be customized
 with their color props or an app-owned `className`. The focus outline color can
 be changed with the inherited `--noised-focus-color` CSS custom property.
 Motion respects `prefers-reduced-motion`.
 
-Import your overrides after the library stylesheet. No CSS tooling is required.
-The stylesheet is marked as a package side effect so bundlers preserve it.
+No CSS tooling or theme provider is required. For example:
+
+```css
+.my-audio-controls { --noised-focus-color: #44cdda; }
+.my-audio-controls .noised-equalizer__background { opacity: 0.6; }
+```
+
+### SSR and explicit stylesheet control
+
+Both entry points can be imported and server-rendered without `window` or
+`document`. Default imports only inject styles when evaluated in a browser;
+they do not emit CSS in server HTML. To style the first server-rendered frame,
+let your framework include the CSS in the document before hydration:
+
+```tsx
+import { Knob, Equalizer, Visualization } from 'noised-ui/unstyled';
+import 'noised-ui/styles.css'; // Your framework/bundler loads or extracts this.
+```
+
+`noised-ui/unstyled` exports the same components and types without injecting
+anything. Use it with the explicit stylesheet for strict CSPs that disallow
+inline `<style>` elements, or when your application manages styles itself.
+Controls still use inline style attributes for dynamic sizes, colors and values;
+your CSP needs to permit those attributes.
+Plain Node.js can import the components, but CSS imports need your framework's
+asset pipeline. The standalone CSS is marked as a side effect for bundlers.
+Existing explicit CSS imports alongside the default entry still work, but
+include duplicate rules; use the unstyled entry to keep only the external CSS.
+
+Rendering and interaction need a browser with SVG, Canvas 2D, ResizeObserver and
+pointer events. Visualization needs Web Audio only when live audio is supplied;
+it never creates an AudioContext or starts playback. In React server-component
+frameworks, put interactive controls inside a client component. Clean up the
+audio graph you own when its player unmounts.
 
 ## Develop
 
@@ -140,4 +181,11 @@ npm run pack:ui
 ```
 
 The package is independently versioned. `prepack` rebuilds the JavaScript,
-declarations and CSS so the tarball contains everything consumers need.
+declarations, automatically injected CSS, and the explicit CSS export so the
+tarball contains everything consumers need. The tsup configuration treats the
+source stylesheet as text for the default JS entry and copies that same file
+for explicit imports. Watch mode rebuilds when the CSS changes.
+
+Run `npm run test:package` from the root to verify production bundling in a
+separate consumer without a CSS import, ESM/CommonJS and both declaration
+formats, automatic styles, host overrides, interactions and server rendering.

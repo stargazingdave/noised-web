@@ -2,6 +2,5 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/theme/theme-provider';
 import { App } from './app';
-import 'noised-ui/styles.css';
 import './styles.css';
 createRoot(document.getElementById('root')!).render(<StrictMode><ThemeProvider><App /></ThemeProvider></StrictMode>);
