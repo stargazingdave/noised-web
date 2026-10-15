@@ -1,6 +1,6 @@
 import type { NoiseDParams } from 'noised-storm';
 import type { NoisedActions } from "../../../hooks/use-noised-controller";
-import { ControlGroup, ControlPanel, ControlSeparator, EQ_FREQUENCIES } from "../components/control-layout";
+import { ControlGroup, ControlPanel, ControlSeparator, EQ_FREQUENCIES, RangeControl } from "../components/control-layout";
 import { Equalizer, type EqualizerColors } from "noised-ui";
 import { RandParamController } from "../components/rand-param-controller";
 
@@ -17,6 +17,15 @@ export function ThunderControls({ actions, colors, params }: ThunderControlsProp
         <ControlPanel>
             <ControlGroup label="Thunder Volume" width={250}>
                 <RandParamController label="Volume" param={thunder.volume} onChange={(value) => actions.updateThunder({ volume: value })} valueRange={[0, 1]} distRange={[0, 0.5]} step={0.01} tooltipText="Controls the master volume of the thunder." />
+            </ControlGroup>
+            <ControlGroup label="Delay Between Thunders" width={300}>
+                <RangeControl
+                    label="Delay Between Thunders"
+                    range={params.delayBetweenThunders}
+                    onChange={actions.setThunderDelay}
+                    min={1000}
+                    max={30000}
+                />
             </ControlGroup>
             <ControlGroup label="Thunder EQ" width={465}>
                 <Equalizer

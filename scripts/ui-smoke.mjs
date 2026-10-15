@@ -48,11 +48,31 @@ try {
     });
     await page.goto(url);
     await page.getByRole('heading', { name: 'NoiseD Storm', exact: true }).waitFor();
+    const masterControls = page.getByRole('region', { name: 'Master controls', exact: true });
+    const player = page.getByRole('region', { name: 'Storm Player', exact: true });
+    assert.equal(await page.getByRole('tab').count(), 2);
+    assert.equal(await player.getByRole('tabpanel').count(), 0);
+    assert.equal(await player.getByRole('switch').count(), 0);
+    assert.ok(await masterControls.isVisible());
+    assert.equal(await page.getByRole('button', { name: 'Play Storm', exact: true }).textContent(), '');
+    assert.ok(await page.locator('.demo-brand img').evaluate(img => img.complete && img.naturalWidth > 0));
+    for (const name of ['Light theme', 'Dark theme', 'System theme']) {
+        assert.equal(await page.getByRole('button', { name, exact: true }).textContent(), '');
+    }
     assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), true);
     assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(5, 8, 17)');
     assert.ok(await page.evaluate(() => getComputedStyle(document.body, '::before').backgroundImage.includes('spaceship-stars.svg')));
     assert.equal((await page.request.get(url + '/images/spaceship-stars.svg')).status(), 200);
     await page.screenshot({ path: path.join(artifacts, 'demo-holographic-desktop.png'), fullPage: true });
+    await page.getByRole('button', { name: 'System theme', exact: true }).hover();
+    await page.getByRole('tooltip').waitFor();
+    await page.getByRole('button', { name: 'System theme', exact: true }).click();
+    assert.equal(await page.getByRole('button', { name: 'System theme', exact: true }).getAttribute('aria-pressed'), 'true');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.waitForFunction(() => document.documentElement.classList.contains('dark'));
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.waitForFunction(() => !document.documentElement.classList.contains('dark'));
+    assert.equal(await page.evaluate(() => localStorage.getItem('noised-storm-theme')), 'system');
     await page.getByRole('button', { name: 'Light theme', exact: true }).click();
     await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('far-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 0);
@@ -76,7 +96,7 @@ try {
     });
     await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('close-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
-    const master = page.getByRole('tabpanel').getByRole('textbox', { name: 'Volume', exact: true });
+    const master = masterControls.getByRole('textbox', { name: 'Volume', exact: true });
     await master.fill('0'); await master.press('Enter');
     await page.waitForFunction(() => {
         const analyser = window.__stormProbe.analyser;
@@ -84,15 +104,18 @@ try {
         analyser.getFloatTimeDomainData(data);
         return data.every(value => value === 0);
     });
-    await page.getByRole('checkbox', { name: 'Rain enabled' }).uncheck();
-    await page.getByRole('checkbox', { name: 'Thunder enabled' }).uncheck();
-    await page.getByRole('checkbox', { name: 'Rain enabled' }).check();
+    await page.getByRole('switch', { name: 'Rain enabled' }).click();
+    assert.equal(await page.getByRole('switch', { name: 'Rain enabled' }).getAttribute('aria-checked'), 'false');
+    await page.getByRole('switch', { name: 'Thunder enabled' }).click();
+    assert.equal(await page.getByRole('switch', { name: 'Thunder enabled' }).getAttribute('aria-checked'), 'false');
+    await page.getByRole('switch', { name: 'Rain enabled' }).click();
+    assert.equal(await page.getByRole('tab', { name: 'Rain', exact: true }).getAttribute('aria-selected'), 'true');
     await page.getByRole('button', { name: 'Pause Storm' }).click();
     const starts = await page.evaluate(() => window.__stormProbe.messages.filter(message => message.type === 'start').length);
     await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('far-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.messages.filter(message => message.type === 'start').length), starts);
 
-    await page.getByRole('tab', { name: 'Rain Controls' }).click();
+    await page.getByRole('tab', { name: 'Rain', exact: true }).click();
     await page.getByRole('textbox', { name: 'Rate', exact: true }).fill('120');
     await page.getByRole('textbox', { name: 'Rate', exact: true }).press('Enter');
     const jsonDownload = page.waitForEvent('download');
@@ -109,14 +132,14 @@ try {
     assert.ok(wav.length > 100000);
     await page.getByRole('button', { name: 'Play Storm' }).waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole('tab', { name: 'Master Controls' }).click();
+    await page.getByRole('tab', { name: 'Rain', exact: true }).click();
     await page.screenshot({ path: path.join(artifacts, 'demo-mobile.png'), fullPage: true });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
     await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
     assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(5, 8, 17)');
     for (const [tab, instructions] of [
-        ['Rain Controls', 'Oscillating Parameter Controller'],
-        ['Thunder Controls', 'Random Parameter Controller'],
+        ['Rain', 'Oscillating Parameter Controller'],
+        ['Thunder', 'Random Parameter Controller'],
     ]) {
         await page.getByRole('tab', { name: tab }).click();
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
@@ -130,19 +153,25 @@ try {
     }
     await page.screenshot({ path: path.join(artifacts, 'demo-mobile-dark.png'), fullPage: true });
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.getByRole('tab', { name: 'Rain Controls' }).click();
+    await page.getByRole('tab', { name: 'Rain', exact: true }).click();
     await page.screenshot({ path: path.join(artifacts, 'demo-desktop-dark.png'), fullPage: true });
     for (const width of [320, 390, 768, 1024]) {
         await page.setViewportSize({ width, height: 900 });
-        for (const tab of ['Master Controls', 'Rain Controls', 'Thunder Controls']) {
+        for (const tab of ['Rain', 'Thunder']) {
             await page.getByRole('tab', { name: tab }).click();
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), tab + ' overflows at ' + width);
             assert.ok(await page.locator('.control-group-body').evaluateAll(groups => groups.every(group => group.scrollWidth <= group.clientWidth + 1)), tab + ' has clipped controls at ' + width);
+            assert.ok(await masterControls.isVisible(), 'Master controls disappeared on ' + tab);
         }
     }
+    await page.getByRole('tab', { name: 'Rain', exact: true }).focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.getByRole('tab', { name: 'Thunder', exact: true }).getAttribute('aria-selected'), 'true');
+    await page.keyboard.press('Home');
+    assert.equal(await page.getByRole('tab', { name: 'Rain', exact: true }).getAttribute('aria-selected'), 'true');
     assert.equal(await page.getByRole('alert').count(), 0);
     assert.deepEqual(errors, []);
-    console.log('UI integration passed: presets while paused/playing, cancelled startup, live volume, enable toggles, parameter/WAV downloads, light/dark layouts and mobile help popovers.');
+    console.log('UI integration passed: icon controls, system/light/dark themes, persistent master controls, tab switches and keyboard navigation, audio playback, presets, JSON/WAV downloads and responsive layouts.');
 } finally {
     await browser?.close();
     // npm spawns Vite; close the owned process tree on Windows.

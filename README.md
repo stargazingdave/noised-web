@@ -77,7 +77,9 @@ JSON or a ten-second stereo WAV.
 The demo's flat starfield uses the same seeded stars and sky palette as the
 sibling `David/spaceship` project, projected to a standalone SVG. Regenerate it
 with `node scripts/generate-starfield.mjs`; the source project is not needed.
-The demo defaults to a dark holographic theme, with a saved light-theme option.
+The demo defaults to a dark holographic theme. The navbar offers saved light,
+dark, and system theme choices. Master controls stay in the player section;
+Rain and Thunder tabs include independent enable switches.
 
 ## Sound-quality research
 
