@@ -15,13 +15,14 @@ const server = spawn(process.execPath, [process.env.npm_execpath, 'run', 'previe
 let output = '';
 server.stdout.on('data', data => { output += data; });
 server.stderr.on('data', data => { output += data; });
-const url = 'http://127.0.0.1:4173';
+const basePath = process.env.VITE_BASE_PATH || '/';
+const url = 'http://127.0.0.1:4173' + basePath.replace(/\/$/, '');
 let browser;
 try {
     let ready = false;
     for (let attempt = 0; attempt < 100; attempt++) {
         if (server.exitCode !== null) throw new Error(output);
-        try { if ((await fetch(url)).ok) { ready = true; break; } } catch {}
+        try { if ((await fetch(url + '/')).ok) { ready = true; break; } } catch {}
         await new Promise(resolve => setTimeout(resolve, 100));
     }
     if (!ready) throw new Error('Preview server did not become ready: ' + output);
@@ -36,6 +37,11 @@ try {
         await page.locator(`.noised-visualization[data-style="${name.toLowerCase()}"]`).waitFor();
     };
     page.on('pageerror', error => errors.push(error.message));
+    page.on('response', response => {
+        if (response.url().startsWith('http://127.0.0.1:4173/') && response.status() >= 400) {
+            errors.push(`HTTP ${response.status()}: ${response.url()}`);
+        }
+    });
     await page.addInitScript(() => {
         const probe = window.__stormProbe = { contexts: 0, worklets: 0, messages: [], analyser: null };
         const Context = window.AudioContext;
@@ -52,7 +58,7 @@ try {
             }
         };
     });
-    await page.goto(url);
+    await page.goto(url + '/');
     await page.getByRole('heading', { name: 'NoiseD Storm', exact: true }).waitFor();
     const masterControls = page.getByRole('region', { name: 'Master controls', exact: true });
     const player = page.getByRole('region', { name: 'Storm Player', exact: true });

@@ -43,6 +43,38 @@ npm run bench
 npm run check
 ```
 
+## Deploy the Storm demo to GitHub Pages
+
+The [Pages workflow](.github/workflows/deploy-pages.yml) runs on every push to
+`main`, or manually from the repository's Actions tab. It installs the workspace
+dependencies with the lockfile, sets up Rust's `wasm32-unknown-unknown` target,
+and builds the engine, UI library, and demo in dependency order. Only
+`storm/demo/dist` is uploaded and deployed through the `github-pages`
+environment. Actions are pinned to verified commit SHAs.
+
+In Settings → Pages, select **GitHub Actions** as the source. No deployment token
+or custom secrets are needed; the deployment job uses GitHub's built-in token.
+The site for this repository is https://stargazingdave.github.io/noised-web/.
+
+The workflow reads the site path from GitHub Pages metadata and passes it as
+`VITE_BASE_PATH` to Vite. Local development defaults to `/`. Logo, backgrounds,
+JavaScript, CSS, WASM and AudioWorklet assets use the build's base path.
+
+To verify a Pages-style production build locally, set `VITE_BASE_PATH` to
+`/noised-web/` in your shell, then run:
+
+```sh
+npm run build
+npm run test:ui
+npm run preview
+```
+
+Keep that environment variable set for the browser check and preview, and open
+http://127.0.0.1:4173/noised-web/. Unset it for normal development. GitHub's
+deployment URL is also linked from the workflow's `github-pages` environment.
+Audio starts when the visitor presses Play; Pages provides the HTTPS required
+by AudioWorklet.
+
 ## Package the libraries
 
 ```sh

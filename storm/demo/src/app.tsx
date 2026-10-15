@@ -3,7 +3,7 @@ import { ThemeSelector } from './components/theme/theme-selector';
 export function App() {
   return <div className="demo-shell">
     <nav className="demo-navbar" aria-label="Main navigation">
-      <div className="demo-brand"><img alt="" width={40} height={40} src="/images/noised-logo-icon.png" />
+      <div className="demo-brand"><img alt="" width={40} height={40} src={`${import.meta.env.BASE_URL}images/noised-logo-icon.png`} />
         <h1 className="demo-title">NoiseD Storm</h1></div>
       <ThemeSelector />
     </nav>
