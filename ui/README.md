@@ -8,10 +8,17 @@ create an audio context or start playback.
 
 ## Install and use
 
+Release candidate: **1.0.0-beta.1**, intended for the `beta` tag. After the
+first publication, install it with `npm install noised-ui@beta`. This is a 1.0
+API candidate; interfaces may still change between beta versions. See the
+[release procedure](https://github.com/stargazingdave/noised-web#publish-a-library-release)
+for verification and publishing commands. Normal releases are independent of
+the Storm engine's version.
+
 From another project, install the locally packed library:
 
 ```sh
-npm install /path/to/noised-ui-0.1.0.tgz
+npm install /path/to/noised-ui-1.0.0-beta.1.tgz
 ```
 
 React is a peer dependency; the package accepts React 18 or 19. The monorepo

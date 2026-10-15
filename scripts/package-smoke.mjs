@@ -100,6 +100,8 @@ import { Visualization, type VisualizationProps } from 'noised-ui';
 const visualization: VisualizationProps = { analyser: null, isPlaying: false }; void Visualization; void visualization;
 import { Equalizer as ExplicitEqualizer, type EqualizerProps } from 'noised-ui/unstyled';
 const eq: EqualizerProps = { gains: [0], freqs: [1000], onChange() {} }; void ExplicitEqualizer; void eq;
+import { NoiseDStorm, type NoiseDParams, type DeepPartial } from 'noised-storm';
+const stormParams: DeepPartial<NoiseDParams> = { masterVolume: 0.5 }; void NoiseDStorm; void stormParams;
 `);
 const compiler = require.resolve('typescript/bin/tsc');
 for (const [module, resolution, file] of [['ESNext', 'bundler', 'main.tsx'], ['NodeNext', 'NodeNext', 'types.cts']]) {

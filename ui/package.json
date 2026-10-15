@@ -1,9 +1,22 @@
 {
   "name": "noised-ui",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.1",
   "description": "NoiseD UI: React audio controls with automatic scoped styling.",
   "license": "ISC",
   "author": "David Portal",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stargazingdave/noised-web.git",
+    "directory": "ui"
+  },
+  "homepage": "https://github.com/stargazingdave/noised-web/tree/main/ui#readme",
+  "bugs": "https://github.com/stargazingdave/noised-web/issues",
+  "keywords": ["react", "audio", "knob", "equalizer", "visualization", "web-audio"],
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

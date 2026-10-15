@@ -8,7 +8,12 @@ the [demo README](../demo/README.md) for player tools, and the
 
 ## Installation and use
 
-Build a local tarball with `npm run pack:library` at the monorepo root, then install the resulting `artifacts/noised-storm-0.1.0.tgz` in another project. After publication, use `npm install noised-storm`.
+Release candidate: **1.0.0-beta.1**, intended for the `beta` tag. This is a 1.0
+API candidate; beta versions may still change the public API. See the
+[release procedure](https://github.com/stargazingdave/noised-web#publish-a-library-release)
+for verification and publishing. The engine and UI have independent releases.
+
+Build a local tarball with `npm run pack:library` at the monorepo root, then install the resulting `artifacts/noised-storm-1.0.0-beta.1.tgz` in another project. After publication, use `npm install noised-storm@beta`.
 
 Initialize from a user interaction. With Vite, import the packaged assets as URLs:
 

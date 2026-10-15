@@ -1,17 +1,36 @@
 {
   "name": "noised-storm",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.1",
   "description": "NoiseD Storm: procedural rain with Rust/WebAssembly and layered Web Audio thunder.",
   "license": "ISC",
   "author": "David Portal",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stargazingdave/noised-web.git",
+    "directory": "storm/engine"
+  },
+  "homepage": "https://github.com/stargazingdave/noised-web/tree/main/storm/engine#readme",
+  "bugs": "https://github.com/stargazingdave/noised-web/issues",
+  "keywords": ["audio", "rain", "thunder", "procedural-audio", "web-audio", "wasm"],
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./rain.worklet.js": "./dist/worklet/rain.worklet.js",
     "./noised_dsp.wasm": "./dist/wasm/noised_dsp.wasm"

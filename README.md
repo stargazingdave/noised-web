@@ -51,7 +51,7 @@ npm run pack:library
 npm run pack:ui
 ```
 
-Install `artifacts/noised-storm-0.1.0.tgz` or `artifacts/noised-ui-0.1.0.tgz` in
+Install `artifacts/noised-storm-1.0.0-beta.1.tgz` or `artifacts/noised-ui-1.0.0-beta.1.tgz` in
 another project. Package versions are independent. Consumers need neither this
 checkout nor Rust; worklet/WASM assets are included in the engine package.
 React 18 or 19 is a UI peer dependency. Storm itself has no React dependency.
@@ -65,6 +65,48 @@ For SSR first-paint CSS or explicit style control, use `noised-ui/unstyled`
 with `noised-ui/styles.css`; see the [UI README](ui/README.md). Neither library
 requires Tailwind or a theme provider. Storm audio needs browser Web Audio,
 HTTPS or localhost, and initialization from a user interaction.
+
+## Publish a library release
+
+Both packages are prepared as **1.0.0-beta.1**, with public access and the `beta`
+dist-tag. The root and demo remain private. Their local workspace dependency
+versions and the lockfile must match the libraries before publishing.
+
+Run `npm run check` and `npm run test:package` first. Commit the release changes
+and record the source revision before publishing; package contents are immutable
+once a name/version is published. For the first manual release, enable npm 2FA,
+then run these commands from the workspace root:
+
+```sh
+npm login
+npm whoami
+npm publish --workspace=noised-storm --access public --tag beta --dry-run
+npm publish --workspace=noised-ui --access public --tag beta --dry-run
+npm publish --workspace=noised-storm --access public --tag beta
+npm publish --workspace=noised-ui --access public --tag beta
+npm view noised-storm@beta version
+npm view noised-ui@beta version
+```
+
+Review the dry-run file lists: each package includes its README, license,
+manifest and built exports; Storm also includes the worklet and WASM. Complete
+the interactive authentication prompts. These unscoped names are always public.
+Use `npm install noised-storm@beta` or `npm install noised-ui@beta` in consuming
+projects; `beta` is intentionally separate from the default `latest` tag.
+
+For subsequent candidates, increment to `1.0.0-beta.2`, etc., update the demo's
+workspace dependency versions and regenerate the lockfile. Once the API is
+ready for stable use, publish a new `1.0.0` version with `--tag latest` and update
+`publishConfig.tag` from `beta` to `latest`. The library versions can diverge
+after their first releases. Publishing is manual; the Pages workflow does not
+publish npm packages.
+
+After verifying both replacements, the old `noised` package can be deprecated
+with a migration message, or unpublished if npm's policy allows removal. For
+packages older than 72 hours, removal requires no registry dependents, fewer
+than 300 downloads in the last week, and a single owner/maintainer. See npm's
+[unpublish policy](https://docs.npmjs.com/policies/unpublish/). Unpublishing
+permanently removes installable versions; do not run it as part of normal releases.
 
 ## GitHub Pages deployment
 
