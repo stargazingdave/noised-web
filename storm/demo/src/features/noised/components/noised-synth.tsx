@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
-import { IoDownloadOutline, IoSave } from "react-icons/io5";
+import { IoChevronDownOutline, IoDownloadOutline, IoSave } from "react-icons/io5";
 import { AmpToggleSwitch } from "noised-ui";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/theme/theme-provider";
 import { useNoisedController } from "../hooks/use-noised-controller";
 import { noisedPresets, type NoisedPresetId } from "../model/noised-params";
-import { MasterControls } from "./synth/panels/master-controls";
+import { MasterEqualizer } from "./synth/panels/master-equalizer";
+import { ThemedKnob } from "./synth/components/themed-knob";
 import { RainControls } from "./synth/panels/rain-controls";
 import { ThunderControls } from "./synth/panels/thunder-controls";
 import { Visualization } from "./visualization";
@@ -44,6 +45,7 @@ export function NoisedSynth() {
     const { resolvedTheme } = useTheme();
     const { actions, activePresetId, analyser, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav } = useNoisedController();
     const [selectedTab, setSelectedTab] = useState<ControlTab>("rain");
+    const [showMasterEq, setShowMasterEq] = useState(false);
     const playbackLabel = isStarting ? "Cancel start" : isRunning ? "Pause Storm" : "Play Storm";
     const equalizerColors = resolvedTheme === "dark"
         ? { background: "#142932", bar: "linear-gradient(0deg, #345a68, #9cd8e4)", Hz: "#9bb6c2", dB: "#9bb6c2" }
@@ -53,25 +55,8 @@ export function NoisedSynth() {
         <div className="storm-player">
             <section className="storm-session" aria-labelledby="storm-player-title">
             <header className="storm-header">
-                <div className="storm-header-visual">
-                    <Visualization analyser={analyser} isPlaying={isRunning} type="waveform" barCount={48} />
-                </div>
                 <div className="storm-toolbar">
-                    <div className="storm-brand">
-                        <h2 className="storm-brand-title" id="storm-player-title">Storm Player</h2>
-                        <div className="storm-transport">
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <button aria-label={playbackLabel} aria-pressed={isRunning || isStarting}
-                                        className="storm-play" onClick={() => void toggle()} type="button">
-                                        <svg aria-hidden="true" className="storm-play-icon" viewBox="0 0 20 20" width="18" height="18">{isRunning || isStarting ? <path d="M6 4h3v12H6zm5 0h3v12h-3z" fill="currentColor" /> : <path d="m6 3 11 7-11 7z" fill="currentColor" />}</svg>
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom" sideOffset={8}>{playbackLabel}</TooltipContent>
-                            </Tooltip>
-                            <span className="storm-status" data-running={isRunning} role="status"><span aria-hidden="true" />{isStarting ? 'Starting…' : isRunning ? 'Playing' : 'Standby'}</span>
-                        </div>
-                    </div>
+                    <h2 className="storm-brand-title" id="storm-player-title">Storm Player</h2>
                     <div className="storm-player-actions">
                         <label className="storm-preset">
                             <span>Preset</span>
@@ -116,11 +101,41 @@ export function NoisedSynth() {
                         </Tooltip>
                     </div>
                 </div>
+                <section className="storm-middle" aria-label="Master controls">
+                    <div className="storm-transport">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button aria-label={playbackLabel} aria-pressed={isRunning || isStarting}
+                                    className="storm-play" onClick={() => void toggle()} type="button">
+                                    <svg aria-hidden="true" className="storm-play-icon" viewBox="0 0 20 20" width="18" height="18">{isRunning || isStarting ? <path d="M6 4h3v12H6zm5 0h3v12h-3z" fill="currentColor" /> : <path d="m6 3 11 7-11 7z" fill="currentColor" />}</svg>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" sideOffset={8}>{playbackLabel}</TooltipContent>
+                        </Tooltip>
+                        <span className="storm-status" data-running={isRunning} role="status"><span aria-hidden="true" />{isStarting ? 'Starting…' : isRunning ? 'Playing' : 'Standby'}</span>
+                    </div>
+                    <div className="storm-scope" role="img" aria-label="Live audio waveform" data-playing={isRunning}>
+                        <Visualization analyser={analyser} isPlaying={isRunning} type="waveform" barCount={48}
+                            color={resolvedTheme === 'dark' ? '#9cd8e4' : '#3e7184'} />
+                    </div>
+                    <div className="storm-master-volume">
+                        <ThemedKnob label="Volume" value={params.masterVolume} min={0} max={1}
+                            step={0.01} onChange={actions.setMasterVolume} />
+                    </div>
+                </section>
             </header>
 
             {error && <p className="storm-error" role="alert">{error}</p>}
-            <section className="storm-master" aria-label="Master controls">
-                <MasterControls actions={actions} colors={equalizerColors} params={params} />
+            <div className="storm-eq-bar">
+                <button type="button" className="storm-eq-toggle"
+                    aria-label={showMasterEq ? 'Hide master EQ' : 'Show master EQ'}
+                    aria-expanded={showMasterEq} aria-controls="master-eq"
+                    onClick={() => setShowMasterEq(visible => !visible)}>
+                    <span>EQ</span><IoChevronDownOutline aria-hidden size={13} />
+                </button>
+            </div>
+            <section className="storm-master" aria-label="Master equalizer" id="master-eq" hidden={!showMasterEq}>
+                {showMasterEq && <MasterEqualizer actions={actions} colors={equalizerColors} params={params} />}
             </section>
             </section>
             <div className="storm-controls">

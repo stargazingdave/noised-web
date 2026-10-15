@@ -1,4 +1,5 @@
 import { useId, useState, type JSX, type KeyboardEvent, type PointerEvent } from "react";
+import type { ControlDensity } from './types';
 
 export interface KnobColors {
     labels: string;
@@ -15,6 +16,7 @@ export interface KnobProps {
     value: number;
     onChange: (value: number) => void;
     size?: number;
+    density?: ControlDensity;
     strokeWidth?: number;
     trackWidth?: number;
     className?: string;
@@ -74,7 +76,8 @@ export function Knob({
     step = 1,
     value,
     onChange,
-    size = 100,
+    density = 'comfortable',
+    size = density === 'compact' ? 64 : 100,
     strokeWidth,
     trackWidth = 1,
     className = "",
@@ -170,7 +173,7 @@ export function Knob({
     const radians = angle * Math.PI / 180;
 
     return (
-        <div className={`noised-knob ${className}`} data-compact={size < 70 || undefined} data-disabled={disabled || undefined}>
+        <div className={`noised-knob ${className}`} data-density={density} data-compact={size < 70 || undefined} data-disabled={disabled || undefined}>
             <div className="noised-knob__label" style={{ color: colors?.labels }}>{label}</div>
             <svg
                 aria-disabled={disabled}
@@ -221,7 +224,7 @@ export function Knob({
                 />
             </svg>
 
-            <div className="noised-knob__values" style={{ color: colors?.labels, width: size + 8 }}>
+            <div className="noised-knob__values" style={{ color: colors?.labels, width: density === 'compact' ? Math.max(size + 8, 56) : size + 8 }}>
                 <div className="noised-knob__bounds" style={{ top: -size * 0.15 }}>
                     <span>{min}</span>
                     <span>{max}</span>
@@ -245,7 +248,7 @@ export function Knob({
                         }
                         event.stopPropagation();
                     }}
-                    style={{ color: colors?.labels, width: size }}
+                    style={{ color: colors?.labels, width: density === 'compact' ? Math.max(size, 56) : size }}
                     type="text"
                     value={draftValue ?? formattedValue}
                 />

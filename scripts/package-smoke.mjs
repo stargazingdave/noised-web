@@ -62,12 +62,19 @@ function App() {
     const [gain, setGain] = useState(0);
     const [gains, setGains] = useState([0, 0, 0]);
     const [enabled, setEnabled] = useState(true);
+    const [compactGains, setCompactGains] = useState(Array(10).fill(0));
     const props: KnobProps = { label: 'Gain', value: gain, onChange: setGain, min: -12, max: 12, step: 0.5 };
     return <div>
         <h1>Standalone controls</h1>
         <Knob {...props} disabled={!enabled} />
-        <div style={{ width: 300 }}><Equalizer gains={gains} freqs={[100, 1000, 10000]} onChange={(index, value) => setGains(current => current.map((gain, i) => i === index ? value : gain))} /></div>
+        <section aria-label="Default EQ" style={{ width: 300 }}><Equalizer gains={gains} freqs={[100, 1000, 10000]} onChange={(index, value) => setGains(current => current.map((gain, i) => i === index ? value : gain))} /></section>
         <AmpToggleSwitch label="Enabled" checked={enabled} onChange={setEnabled} />
+        <h2>Compact controls</h2>
+        <Knob {...props} label="Compact gain" density="compact" />
+        <section id="compact-eq" aria-label="Compact EQ" style={{ width: 300 }}>
+            <Equalizer density="compact" gains={compactGains} freqs={[31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]}
+                onChange={(index, value) => setCompactGains(current => current.map((gain, i) => i === index ? value : gain))} />
+        </section>
     </div>;
 }
 createRoot(document.getElementById('root')!).render(<App />);
@@ -103,12 +110,48 @@ try {
     await page.mouse.move(bounds.x + bounds.width * 0.8, bounds.y + bounds.height * 0.95, { steps: 5 });
     await page.mouse.up();
     assert.equal(await knob.getAttribute('aria-valuenow'), '12');
-    const band = page.getByRole('slider', { name: 'Gain at 1.0k', exact: true });
+    const band = page.getByRole('region', { name: 'Default EQ' }).getByRole('slider', { name: 'Gain at 1.0k', exact: true });
     await band.press('ArrowUp');
     assert.equal(await band.getAttribute('aria-valuenow'), '1');
     const bandBounds = await band.boundingBox();
     await page.mouse.click(bandBounds.x + bandBounds.width / 2, bandBounds.y + bandBounds.height * 0.25);
     assert.ok(Number(await band.getAttribute('aria-valuenow')) > 5);
+    const compact = page.getByRole('region', { name: 'Compact EQ' });
+    assert.equal((await compact.locator('.noised-equalizer').boundingBox()).height, 128);
+    assert.equal((await page.getByRole('slider', { name: 'Compact gain', exact: true }).boundingBox()).width, 64);
+    assert.equal(await compact.getByRole('slider').count(), 10);
+    const compactBand = compact.getByRole('slider', { name: 'Gain at 1.0k', exact: true });
+    await compactBand.press('End');
+    assert.equal(await compactBand.getAttribute('aria-valuenow'), '12');
+    await compactBand.press('Home');
+    assert.equal(await compactBand.getAttribute('aria-valuenow'), '-12');
+    await compactBand.press('Shift+ArrowUp');
+    assert.equal(await compactBand.getAttribute('aria-valuenow'), '-11.9');
+    await compactBand.dblclick();
+    assert.equal(await compactBand.getAttribute('aria-valuenow'), '0');
+    const compactBounds = await compactBand.boundingBox();
+    assert.ok(compactBounds.width >= 24);
+    // Hit the edge of the band column, outside the narrow visible fader.
+    await page.mouse.move(compactBounds.x + 1, compactBounds.y + compactBounds.height * 0.25);
+    await page.mouse.down();
+    await page.mouse.up();
+    assert.ok(Math.abs(Number(await compactBand.getAttribute('aria-valuenow')) - 6) <= 0.2);
+    assert.ok(await compactBand.locator('.noised-equalizer__readout').isVisible());
+    const alignment = await compact.evaluate(section => {
+        const sliders = [...section.querySelectorAll('.noised-equalizer__slider')];
+        const labels = [...section.querySelectorAll('.noised-equalizer__frequency')];
+        return sliders.every((slider, index) => {
+            const a = slider.getBoundingClientRect();
+            const b = labels[index].getBoundingClientRect();
+            return Math.abs(a.x + a.width / 2 - b.x - b.width / 2) < 1;
+        });
+    });
+    assert.ok(alignment, 'Frequency labels do not align with their faders');
+    await compact.evaluate(section => { section.style.width = '240px'; });
+    await compact.locator('.noised-equalizer__scale').waitFor({ state: 'detached' });
+    assert.ok(await compact.evaluate(section => section.scrollWidth <= section.clientWidth));
+    await compact.evaluate(section => { section.style.width = '300px'; });
+    await compact.locator('.noised-equalizer__scale').waitFor();
     const toggle = page.getByRole('switch', { name: 'Enabled' });
     await toggle.press('Space');
     assert.equal(await toggle.getAttribute('aria-checked'), 'false');

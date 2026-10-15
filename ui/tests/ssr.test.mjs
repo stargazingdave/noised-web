@@ -34,3 +34,18 @@ test('disabled controls expose their state and remove the knob from the tab orde
     assert.match(markup, /tabindex="-1"/);
     assert.match(markup, /disabled=""/);
 });
+
+test('compact controls preserve accessible values and explicit sizes', () => {
+    const compactKnob = renderToStaticMarkup(createElement(Knob, { density: 'compact', value: 0.5, min: 0, max: 1, onChange() {} }));
+    assert.match(compactKnob, /width="64"/);
+    assert.match(compactKnob, /aria-valuemin="0" aria-valuenow="0.5"/);
+    const sizedKnob = renderToStaticMarkup(createElement(Knob, { density: 'compact', size: 48, value: 0, onChange() {} }));
+    assert.match(sizedKnob, /width="48"/);
+    const eq = renderToStaticMarkup(createElement(Equalizer, { density: 'compact', gains: [-6, 3, 18], freqs: [100, 1000, 10000], min: -6, max: 18, onChange() {} }));
+    assert.match(eq, /height:128px/);
+    assert.equal([...eq.matchAll(/aria-orientation="vertical"/g)].length, 3);
+    assert.match(eq, /aria-valuetext="\+3 dB"/);
+    assert.match(eq, /data-zero="true" style="top:75%"/);
+    const defaultKnob = renderToStaticMarkup(createElement(Knob, { value: 0, onChange() {} }));
+    assert.match(defaultKnob, /width="100"/);
+});

@@ -15,7 +15,7 @@ export function ControlPanel({ children }: Readonly<{ children: ReactNode }>) {
     return <div className="control-panel">{children}</div>;
 }
 
-export function ControlGroup({ children, height = 260, label, width }: ControlGroupProps) {
+export function ControlGroup({ children, height = 190, label, width }: ControlGroupProps) {
     return (
         <section
             className="control-group"

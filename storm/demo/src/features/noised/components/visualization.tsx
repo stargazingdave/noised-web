@@ -5,6 +5,7 @@ interface VisualizationProps {
     isPlaying: boolean;
     type?: "waveform" | "spectrum";
     barCount?: number;
+    color?: string;
 }
 
 interface CanvasSize {
@@ -27,6 +28,7 @@ export function Visualization({
     isPlaying,
     type = "waveform",
     barCount = 32,
+    color = '#9cd8e4',
 }: VisualizationProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -103,7 +105,7 @@ export function Visualization({
             context.clearRect(0, 0, canvasSize.width, canvasSize.height);
             context.beginPath();
             context.lineWidth = 2;
-            context.strokeStyle = "#9cd8e4";
+            context.strokeStyle = color;
 
             const sliceWidth = canvasSize.width / data.length;
             for (let index = 0; index < data.length; index += 1) {
@@ -125,7 +127,7 @@ export function Visualization({
 
         draw();
         return () => window.cancelAnimationFrame(animationFrameId);
-    }, [analyser, barCount, canvasSize, isPlaying, type]);
+    }, [analyser, barCount, canvasSize, color, isPlaying, type]);
 
     return (
         <div ref={containerRef} className="storm-visualization">

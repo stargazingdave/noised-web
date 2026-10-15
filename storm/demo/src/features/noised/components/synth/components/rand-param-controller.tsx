@@ -63,7 +63,7 @@ export const RandParamController: React.FC<RandParamControllerProps> = ({
             max={valueRange[1]}
             step={step}
             label="Value"
-            size={80}
+            size={64}
           />
         </div>
 
@@ -85,7 +85,7 @@ export const RandParamController: React.FC<RandParamControllerProps> = ({
               max={distRange[1]}
               step={step}
               label="Dist"
-              size={50}
+              size={44}
               disabled={!param.rand}
             />
           </div>

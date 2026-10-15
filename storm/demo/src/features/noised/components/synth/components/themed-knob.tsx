@@ -5,6 +5,7 @@ import { useTheme } from '@/components/theme/theme-provider';
 export const ThemedKnob: FC<KnobProps> = (props) => {
     const { resolvedTheme } = useTheme();
     const customProps: Partial<KnobProps> = {
+        density: 'compact',
         trackWidth: 1,
         colors: {
             face: resolvedTheme === 'dark' ? '#244552' : '#b0cbd1',

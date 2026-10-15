@@ -78,8 +78,10 @@ The demo's flat starfield uses the same seeded stars and sky palette as the
 sibling `David/spaceship` project, projected to a standalone SVG. Regenerate it
 with `node scripts/generate-starfield.mjs`; the source project is not needed.
 The demo defaults to a dark holographic theme. The navbar offers saved light,
-dark, and system theme choices. Master controls stay in the player section;
-Rain and Thunder tabs include independent enable switches.
+dark, and system theme choices. The player has playback/status, a compact live
+waveform window, and master volume below its title and actions. The master EQ
+opens from an EQ tab and is hidden initially. Rain and Thunder tabs include
+independent enable switches.
 
 ## Sound-quality research
 

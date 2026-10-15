@@ -54,6 +54,25 @@ try {
     assert.equal(await player.getByRole('tabpanel').count(), 0);
     assert.equal(await player.getByRole('switch').count(), 0);
     assert.ok(await masterControls.isVisible());
+    const eqToggle = page.getByRole('button', { name: 'Show master EQ', exact: true });
+    const masterEq = page.locator('#master-eq');
+    assert.equal(await eqToggle.getAttribute('aria-expanded'), 'false');
+    assert.equal(await masterEq.isVisible(), false);
+    assert.equal((await eqToggle.textContent()).trim(), 'EQ');
+    const scopeBounds = await page.getByRole('img', { name: 'Live audio waveform' }).boundingBox();
+    const playBounds = await page.getByRole('button', { name: 'Play Storm', exact: true }).boundingBox();
+    const volumeBounds = await masterControls.getByRole('slider', { name: 'Volume', exact: true }).boundingBox();
+    assert.ok(scopeBounds.width <= 320 && scopeBounds.height === 72);
+    assert.ok(playBounds.x < scopeBounds.x && scopeBounds.x < volumeBounds.x);
+    await eqToggle.click();
+    const masterBand = masterEq.getByRole('slider').first();
+    await masterBand.press('ArrowUp');
+    const editedGain = await masterBand.getAttribute('aria-valuenow');
+    await page.getByRole('button', { name: 'Hide master EQ', exact: true }).click();
+    assert.equal(await masterEq.isVisible(), false);
+    await eqToggle.click();
+    assert.equal(await masterEq.getByRole('slider').first().getAttribute('aria-valuenow'), editedGain);
+    await page.getByRole('button', { name: 'Hide master EQ', exact: true }).click();
     assert.equal(await page.getByRole('button', { name: 'Play Storm', exact: true }).textContent(), '');
     assert.ok(await page.locator('.demo-brand img').evaluate(img => img.complete && img.naturalWidth > 0));
     for (const name of ['Light theme', 'Dark theme', 'System theme']) {
@@ -93,6 +112,11 @@ try {
         const data = new Float32Array(analyser.fftSize);
         analyser.getFloatTimeDomainData(data);
         return data.some(value => Math.abs(value) > 0.0001);
+    });
+    await page.waitForFunction(() => {
+        const canvas = document.querySelector('.storm-scope canvas');
+        const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+        return pixels.some((value, index) => index % 4 === 3 && value > 0);
     });
     await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('close-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
@@ -157,12 +181,14 @@ try {
     await page.screenshot({ path: path.join(artifacts, 'demo-desktop-dark.png'), fullPage: true });
     for (const width of [320, 390, 768, 1024]) {
         await page.setViewportSize({ width, height: 900 });
+        await page.getByRole('button', { name: 'Show master EQ', exact: true }).click();
         for (const tab of ['Rain', 'Thunder']) {
             await page.getByRole('tab', { name: tab }).click();
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), tab + ' overflows at ' + width);
             assert.ok(await page.locator('.control-group-body').evaluateAll(groups => groups.every(group => group.scrollWidth <= group.clientWidth + 1)), tab + ' has clipped controls at ' + width);
             assert.ok(await masterControls.isVisible(), 'Master controls disappeared on ' + tab);
         }
+        await page.getByRole('button', { name: 'Hide master EQ', exact: true }).click();
     }
     await page.getByRole('tab', { name: 'Rain', exact: true }).focus();
     await page.keyboard.press('ArrowRight');

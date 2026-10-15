@@ -83,11 +83,17 @@ select option { background: var(--popover); color: var(--foreground); }
     linear-gradient(var(--corner), var(--corner)) bottom right / 15px 1px no-repeat,
     linear-gradient(var(--corner), var(--corner)) bottom right / 1px 15px no-repeat;
 }
-.storm-header-visual { position: absolute; inset: 0; z-index: 0; opacity: 0.16; overflow: hidden; pointer-events: none; }
-.storm-toolbar { position: relative; z-index: 1; display: flex; width: 100%; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.5rem; padding: 1.5rem; }
-.storm-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 0.875rem; }
+.storm-toolbar { display: flex; width: 100%; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.5rem 1.5rem 0; }
 .storm-brand-title { font-size: 1.5rem; font-weight: 400; letter-spacing: -0.02em; }
-.storm-transport { display: flex; align-items: center; gap: 0.875rem; }
+.storm-middle { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: 1.25rem 1.5rem; }
+.storm-transport { display: flex; align-items: center; gap: 0.75rem; }
+.storm-scope { position: relative; width: 40%; max-width: 320px; height: 72px; overflow: hidden; border: 1px solid var(--border); border-radius: 3px; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 20px 20px, linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 20px 20px, var(--surface-soft); }
+.storm-scope[data-playing="false"]::after { content: ''; position: absolute; top: 50%; right: 0; left: 0; border-top: 1px solid var(--corner); opacity: 0.5; pointer-events: none; }
+.storm-eq-bar { padding: 0 1.5rem; border-top: 1px solid var(--border); }
+.storm-eq-toggle { display: inline-flex; min-width: 72px; min-height: 44px; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border-bottom: 2px solid transparent; color: var(--muted-foreground); font: 11px Consolas, monospace; letter-spacing: 0.08em; }
+.storm-eq-toggle:hover { color: var(--accent); background: var(--accent-soft); }
+.storm-eq-toggle[aria-expanded="true"] { border-bottom-color: var(--accent); color: var(--accent); }
+.storm-eq-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
 .storm-status { display: flex; align-items: center; gap: 0.5rem; color: var(--muted-foreground); font: 10px Consolas, monospace; text-transform: uppercase; letter-spacing: 0.08em; }
 .storm-status > span { width: 5px; height: 5px; border-radius: 50%; background: var(--muted-foreground); }
 .storm-status[data-running="true"] { color: var(--accent); }
@@ -102,7 +108,6 @@ select option { background: var(--popover); color: var(--foreground); }
 .storm-save:hover { border-color: var(--corner); color: var(--accent); }
 .storm-export { min-height: 44px; gap: 0.5rem; font-size: 12px; }
 .storm-master { padding: 1.25rem; border-top: 1px solid var(--border); }
-.storm-master .control-group { background-color: var(--accent-soft); box-shadow: none; backdrop-filter: none; }
 .storm-error { margin-bottom: 1rem; padding: 0.875rem; border: 1px solid #e6a49e; border-radius: 3px; background: #421f27; color: #ffe1dd; }
 .storm-controls { display: flex; flex-direction: column; }
 .storm-tabs { display: flex; gap: 2rem; width: 100%; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
@@ -118,24 +123,24 @@ select option { background: var(--popover); color: var(--foreground); }
 .storm-visualization { position: relative; height: 100%; width: 100%; }
 .storm-visualization-canvas { position: absolute; inset: 0; }
 
-.control-panel { position: relative; display: flex; width: 100%; min-width: 0; flex-wrap: wrap; align-items: stretch; gap: 12px; }
+.control-panel { position: relative; display: flex; width: 100%; min-width: 0; flex-wrap: wrap; align-items: stretch; gap: 8px; }
 .control-group { position: relative; display: flex; min-width: 0; flex-grow: 1; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 3px; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 28px 28px, linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 28px 28px, var(--surface); box-shadow: inset 0 0 32px #7ad9e805, 0 0 28px #6ee6ff05; backdrop-filter: blur(5px); }
-.control-group-title { width: 100%; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); background: var(--surface-soft); color: var(--muted-foreground); font: 10px/1.5 Consolas, monospace; letter-spacing: 0.12em; text-transform: uppercase; }
-.control-group-body { display: flex; height: 100%; width: 100%; min-height: 0; align-items: center; justify-content: center; overflow-x: auto; padding: 0.75rem; }
+.control-group-title { width: 100%; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); background: var(--surface-soft); color: var(--muted-foreground); font: 10px/1.5 Consolas, monospace; letter-spacing: 0.1em; text-transform: uppercase; }
+.control-group-body { display: flex; height: 100%; width: 100%; min-height: 0; align-items: center; justify-content: center; overflow-x: auto; padding: 0.5rem; }
 .control-separator { align-self: stretch; width: 1px; flex-shrink: 0; background: var(--border); }
 .control-select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 3px; background: var(--surface-soft); cursor: pointer; }
 .control-select:hover { border-color: var(--corner); }
 .control-select-option { background: var(--popover); color: var(--foreground); }
-.control-range { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 0.5rem; }
+.control-range { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 0.25rem; }
 .control-range-label { color: var(--muted-foreground); font-size: 11px; text-align: center; }
-.control-pair { display: flex; gap: 1rem; }
+.control-pair { display: flex; gap: 0.5rem; }
 .control-row { display: flex; height: 100%; width: 100%; min-width: 0; align-items: center; justify-content: space-around; }
 .noise-type-controls { display: flex; height: 100%; flex-grow: 1; flex-direction: column; align-items: center; justify-content: space-around; padding: 0.5rem; }
 .noise-type-label { display: flex; width: 100%; flex-direction: column; gap: 0.5rem; font-size: 0.75rem; }
 .noise-filter-controls { display: flex; height: 100%; flex-grow: 1; flex-direction: column; align-items: center; justify-content: center; }
 
-.parameter-controller { display: flex; height: fit-content; flex-shrink: 0; flex-direction: column; gap: 0.75rem; padding: 0.5rem; }
-.parameter-heading { display: flex; align-items: center; gap: 0.5rem; font-size: 12px; }
+.parameter-controller { display: flex; height: fit-content; flex-shrink: 0; flex-direction: column; gap: 0.5rem; padding: 0.25rem; }
+.parameter-heading { display: flex; align-items: center; gap: 0.5rem; font-size: 11px; }
 .parameter-help { display: inline-flex; width: 1.25rem; height: 1.25rem; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 50%; color: var(--muted-foreground); }
 .parameter-help:hover { border-color: var(--corner); color: var(--accent); }
 .parameter-help-icon { width: 0.875rem; height: 0.875rem; }
@@ -151,7 +156,7 @@ select option { background: var(--popover); color: var(--foreground); }
 .parameter-instructions-title { font-size: 1.25rem; font-weight: 400; line-height: 1.5; }
 .parameter-example { display: flex; width: 100%; flex-wrap: wrap; align-items: stretch; gap: 1rem; }
 .parameter-example-visual { width: 13rem; min-height: 8rem; }
-.parameter-controls--wide { gap: 1rem; height: fit-content; }
+.parameter-controls--wide { gap: 0.75rem; height: fit-content; }
 .parameter-value--full { height: 100%; }
 .canvas-container { height: 100%; width: 100%; }
 
@@ -161,9 +166,8 @@ select option { background: var(--popover); color: var(--foreground); }
 .noised-knob__input { border-bottom: 1px solid var(--border); color: var(--accent); font-size: 11px; }
 .noised-knob__dial { filter: drop-shadow(0 0 5px #8bdded0d); }
 .noised-equalizer { font-family: Consolas, monospace; }
-.noised-equalizer__bar { width: 0.5rem; border: 1px solid var(--border); border-radius: 1px; }
-.noised-equalizer__fill { border-top: 2px solid var(--accent); }
-.noised-equalizer__tick, .noised-equalizer__frequency, .noised-equalizer__unit { font-size: 9px; }
+.noised-equalizer__bar { border: 1px solid var(--border); }
+.noised-equalizer__thumb { background: var(--accent); }
 .noised-switch { color: var(--muted-foreground); font: 10px Consolas, monospace; }
 .noised-switch__button { border-color: var(--border); background: var(--surface-soft); box-shadow: none; }
 .noised-switch__ring { border-color: var(--corner); background: var(--surface); box-shadow: none; }
@@ -202,12 +206,12 @@ select option { background: var(--popover); color: var(--foreground); }
   .demo-popover.parameter-popover { width: 32rem; }
 }
 @media (max-width: 1100px) {
-  .control-group:has(.control-row) { height: auto !important; min-height: 260px; }
+  .control-group:has(.control-row) { height: auto !important; min-height: 190px; }
   .control-group:has(.control-row) .control-group-body { height: auto; flex: 1; }
   .control-row { height: auto; flex-wrap: wrap; gap: 1.5rem 0.75rem; padding: 0.5rem 0; }
   .control-row > .control-separator { display: none; }
   .control-row > .parameter-controller { align-items: center; }
-  .noise-type-controls, .noise-filter-controls { height: auto; min-height: 190px; }
+  .noise-type-controls, .noise-filter-controls { height: auto; min-height: 140px; }
 }
 @media (max-width: 700px) {
   .demo-shell { padding-top: 1rem; }
@@ -216,9 +220,11 @@ select option { background: var(--popover); color: var(--foreground); }
   .demo-brand img { width: 28px; height: 28px; }
   .demo-title { font-size: 1.125rem; }
   .theme-option { width: 32px; height: 36px; }
-  .storm-toolbar { gap: 1.25rem; padding: 1.25rem; }
-  .storm-brand { width: 100%; }
+  .storm-toolbar { gap: 1rem; padding: 1.25rem 1.25rem 0; }
   .storm-brand-title { font-size: 1.375rem; }
+  .storm-middle { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding: 1.25rem; }
+  .storm-scope { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: none; height: 60px; }
+  .storm-eq-bar { padding: 0 1.25rem; }
   .storm-player-actions { width: 100%; gap: 0.5rem; justify-content: flex-end; }
   .storm-preset { flex: 1; flex-wrap: wrap; gap: 0.5rem; }
   .storm-preset-select { width: 100%; padding-right: 0.5rem; }

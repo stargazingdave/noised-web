@@ -15,10 +15,10 @@ export function ThunderControls({ actions, colors, params }: ThunderControlsProp
 
     return (
         <ControlPanel>
-            <ControlGroup label="Thunder Volume" width={250}>
+            <ControlGroup label="Thunder Volume" width={200}>
                 <RandParamController label="Volume" param={thunder.volume} onChange={(value) => actions.updateThunder({ volume: value })} valueRange={[0, 1]} distRange={[0, 0.5]} step={0.01} tooltipText="Controls the master volume of the thunder." />
             </ControlGroup>
-            <ControlGroup label="Delay Between Thunders" width={300}>
+            <ControlGroup label="Delay Between Thunders" width={220}>
                 <RangeControl
                     label="Delay Between Thunders"
                     range={params.delayBetweenThunders}
@@ -27,7 +27,7 @@ export function ThunderControls({ actions, colors, params }: ThunderControlsProp
                     max={30000}
                 />
             </ControlGroup>
-            <ControlGroup label="Thunder EQ" width={465}>
+            <ControlGroup label="Thunder EQ" width={320}>
                 <Equalizer
                     colors={colors}
                     freqs={EQ_FREQUENCIES}
@@ -35,22 +35,22 @@ export function ThunderControls({ actions, colors, params }: ThunderControlsProp
                     onChange={(index, value) => actions.updateThunder({
                         eqGains: thunder.eqGains.map((gain, gainIndex) => gainIndex === index ? value : gain),
                     })}
-                    rotateLabels={-25}
+                    density="compact"
                 />
             </ControlGroup>
-            <ControlGroup label="Thunder Duration" width={250}>
+            <ControlGroup label="Thunder Duration" width={200}>
                 <RandParamController label="Duration" param={thunder.duration} onChange={(value) => actions.updateThunder({ duration: value })} valueRange={[0, 10]} distRange={[0, 5]} step={0.01} tooltipText="Controls the duration of each thunder." />
             </ControlGroup>
-            <ControlGroup label="Panning" width={250}>
+            <ControlGroup label="Panning" width={200}>
                 <RandParamController label="Pan Range" param={thunder.panRange} onChange={(value) => actions.updateThunder({ panRange: value })} valueRange={[0, 1]} distRange={[0, 0.5]} step={0.01} tooltipText="Controls the thunder panning range. 0 is center; 1 is full left/right." />
             </ControlGroup>
-            <ControlGroup label="Thunder Filter" width={250}>
+            <ControlGroup label="Thunder Filter" width={200}>
                 <RandParamController label="Filter Freq" param={thunder.filterFreq} onChange={(value) => actions.updateThunder({ filterFreq: value })} valueRange={[0, 3000]} distRange={[0, 1000]} step={0.01} tooltipText="Controls the low-pass filter cutoff frequency." />
             </ControlGroup>
-            <ControlGroup label="Bursts" width={250}>
+            <ControlGroup label="Bursts" width={200}>
                 <RandParamController label="Burst Count" param={thunder.burstCount} onChange={(value) => actions.updateThunder({ burstCount: value })} valueRange={[1, 10]} distRange={[0, 5]} step={1} tooltipText="Controls the number of thunder bursts." />
             </ControlGroup>
-            <ControlGroup label="Reverb" width={750}>
+            <ControlGroup label="Reverb" width={600}>
                 <div className="control-row">
                     <RandParamController label="Reverb Duration" param={thunder.reverbDuration} onChange={(value) => actions.updateThunder({ reverbDuration: value })} valueRange={[0, 10]} distRange={[0, 5]} step={0.01} tooltipText="Controls the duration of the reverb effect." />
                     <ControlSeparator />
@@ -59,13 +59,13 @@ export function ThunderControls({ actions, colors, params }: ThunderControlsProp
                     <RandParamController label="Reverb Wet Level" param={thunder.reverbWetLevel} onChange={(value) => actions.updateThunder({ reverbWetLevel: value })} valueRange={[0, 1]} distRange={[0, 0.5]} step={0.01} tooltipText="Controls the wet level of the reverb effect." />
                 </div>
             </ControlGroup>
-            <ControlGroup label="Filter" width={250}>
+            <ControlGroup label="Filter" width={200}>
                 <RandParamController label="High Pass Freq" param={thunder.highPassFreq} onChange={(value) => actions.updateThunder({ highPassFreq: value })} valueRange={[20, 1000]} distRange={[0, 500]} step={10} tooltipText="Controls the high-pass cutoff frequency to remove overly bass-heavy sound." />
             </ControlGroup>
-            <ControlGroup label="Crackle" width={250}>
+            <ControlGroup label="Crackle" width={200}>
                 <RandParamController label="Crackle Amount" param={thunder.crackleAmount} onChange={(value) => actions.updateThunder({ crackleAmount: value })} valueRange={[0, 1]} distRange={[0, 0.5]} step={0.01} tooltipText="Controls the amount of crackle applied to the thunder." />
             </ControlGroup>
-            <ControlGroup label="Rumble" width={1000}>
+            <ControlGroup label="Rumble" width={800}>
                 <div className="control-row">
                     <RandParamController label="Rumble Freq Start" param={thunder.rumbleFreqStart} onChange={(value) => actions.updateThunder({ rumbleFreqStart: value })} valueRange={[20, 100]} distRange={[0, 10]} step={1} tooltipText="Controls the starting frequency of the rumble." />
                     <ControlSeparator />

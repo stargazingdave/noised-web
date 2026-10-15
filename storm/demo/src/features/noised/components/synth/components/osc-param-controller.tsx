@@ -61,7 +61,7 @@ export const OscParamController: React.FC<OscParamControllerProps> = ({
             max={valueRange[1]}
             step={step}
             label="Value"
-            size={80}
+            size={64}
             trackWidth={0}
           />
         </div>
@@ -83,7 +83,7 @@ export const OscParamController: React.FC<OscParamControllerProps> = ({
               max={ampRange[1]}
               step={step}
               label="Amp"
-              size={50}
+              size={44}
               disabled={!param.osc}
               trackWidth={0}
             />
@@ -94,7 +94,7 @@ export const OscParamController: React.FC<OscParamControllerProps> = ({
               max={freqRange[1]}
               step={0.01}
               label="Freq"
-              size={50}
+              size={44}
               disabled={!param.osc}
               trackWidth={0}
             />
