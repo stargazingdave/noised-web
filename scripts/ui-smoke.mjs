@@ -27,7 +27,7 @@ try {
     if (!ready) throw new Error('Preview server did not become ready: ' + output);
     browser = await chromium.launch({ channel: process.env.NOISED_BROWSER_CHANNEL || 'chrome', headless: true,
         args: ['--autoplay-policy=no-user-gesture-required'] });
-    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(() => {
@@ -106,9 +106,29 @@ try {
     await page.getByRole('tab', { name: 'Master Controls' }).click();
     await page.screenshot({ path: path.join(artifacts, 'demo-mobile.png'), fullPage: true });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+    await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(23, 23, 23)');
+    for (const [tab, instructions] of [
+        ['Rain Controls', 'Oscillating Parameter Controller'],
+        ['Thunder Controls', 'Random Parameter Controller'],
+    ]) {
+        await page.getByRole('tab', { name: tab }).click();
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+        await page.getByRole('button', { name: 'Parameter help', exact: true }).first().click();
+        await page.getByRole('heading', { name: instructions, exact: true }).waitFor();
+        const popover = page.getByRole('dialog');
+        const bounds = await popover.boundingBox();
+        assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 391);
+        await page.keyboard.press('Escape');
+        await popover.waitFor({ state: 'hidden' });
+    }
+    await page.screenshot({ path: path.join(artifacts, 'demo-mobile-dark.png'), fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByRole('tab', { name: 'Rain Controls' }).click();
+    await page.screenshot({ path: path.join(artifacts, 'demo-desktop-dark.png'), fullPage: true });
     assert.equal(await page.getByRole('alert').count(), 0);
     assert.deepEqual(errors, []);
-    console.log('UI integration passed: presets while paused/playing, cancelled startup, live volume, enable toggles, parameter/WAV downloads and mobile layout.');
+    console.log('UI integration passed: presets while paused/playing, cancelled startup, live volume, enable toggles, parameter/WAV downloads, light/dark layouts and mobile help popovers.');
 } finally {
     await browser?.close();
     // npm spawns Vite; close the owned process tree on Windows.
