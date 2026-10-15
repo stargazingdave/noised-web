@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import type { NoiseDEngine } from "noised-storm";
 import { IoSave } from "react-icons/io5";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/theme/theme-provider";
@@ -17,12 +18,12 @@ const tabs: ReadonlyArray<{ id: ControlTab; label: string }> = [
     { id: "thunder", label: "Thunder Controls" },
 ];
 
-function downloadJson(value: unknown) {
+function downloadJson(value: unknown, engine: NoiseDEngine) {
     const blob = new Blob([JSON.stringify(value, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "noised-storm-params.json";
+    link.download = `noised-storm-${engine}-params.json`;
     link.click();
     URL.revokeObjectURL(url);
 }
@@ -42,7 +43,7 @@ function TabPanel({ children, id }: Readonly<{ children: ReactNode; id: ControlT
 
 export function NoisedSynth() {
     const { resolvedTheme } = useTheme();
-    const { actions, activePresetId, analyser, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav } = useNoisedController();
+    const { actions, activePresetId, analyser, engine, selectEngine, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav } = useNoisedController();
     const [selectedTab, setSelectedTab] = useState<ControlTab>("master");
     const equalizerColors = resolvedTheme === "dark"
         ? { background: "#1a1a1a", Hz: "#fff", dB: "#fff" }
@@ -89,7 +90,7 @@ export function NoisedSynth() {
                                 <button
                                     aria-label="Download parameters as JSON"
                                     className="z-10 rounded-full p-4 font-bold text-pink-500 transition hover:text-pink-600"
-                                    onClick={() => downloadJson(params)}
+                                    onClick={() => downloadJson(params, engine)}
                                     type="button"
                                 >
                                     <IoSave aria-hidden size={50} />
@@ -101,6 +102,23 @@ export function NoisedSynth() {
                 </div>
             </header>
 
+            <section aria-label="Engine comparison" className="mb-3 rounded-lg border bg-background px-4 py-3">
+                <div className="flex flex-wrap items-center gap-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold">
+                        Engine
+                        <select aria-label="Audio engine" className="rounded-lg border bg-background px-3 py-2 font-normal"
+                            disabled={isExporting} value={engine}
+                            onChange={event => void selectEngine(event.target.value as NoiseDEngine)}>
+                            <option value="wasm">Rust / WASM</option>
+                            <option value="javascript">JavaScript / Web Audio (fixed)</option>
+                        </select>
+                    </label>
+                    <span className="text-sm text-muted-foreground" role="status">
+                        {isStarting ? 'Starting' : isRunning ? 'Playing' : 'Paused'} · {engine === 'wasm' ? 'Rust / WASM' : 'JavaScript / Web Audio'}
+                    </span>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">Both engines use the same fixes, presets, controls, and thunder. Rain synthesis and scheduling differ. Switching engines restarts playback with your current settings.</p>
+            </section>
             <div className="mb-3 flex flex-wrap items-center gap-4 rounded-lg border px-4 py-3">
                 <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={params.rainParams.on} onChange={event => actions.setRainEnabled(event.target.checked)} />Rain enabled</label>
                 <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={params.thunderParams.on} onChange={event => actions.setThunderEnabled(event.target.checked)} />Thunder enabled</label>

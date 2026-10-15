@@ -263,3 +263,40 @@ test('zero duration controls remain valid for the player', () => {
     assert.ok(ctx.buffers.every(buffer => buffer.length > 0));
     thunder.destroy();
 });
+
+
+test('explicit JavaScript engine starts without any WASM or worklet loading', async () => {
+    const ctx = new Context();
+    const oldFetch = globalThis.fetch;
+    globalThis.fetch = () => { throw new Error('JavaScript must not load WASM'); };
+    try {
+        const controller = await NoiseDController.create(ctx, { thunderParams: { on: false } }, { engine: 'javascript' });
+        assert.equal(controller.getEngine(), 'javascript');
+        await controller.start();
+        assert.equal(ctx.audioWorklet.calls.length, 0);
+        assert.equal(controller.rain.worklet, null);
+        assert.ok(controller.rain.noiseNode);
+        controller.updateRainParams({ dropRate: 0, noiseLevel: 0.7 });
+        assert.equal(controller.rain.dryGain.gain.value, 0.7);
+        controller.destroy();
+        await assert.rejects(NoiseDController.create(ctx, {}, { engine: 'unknown' }), RangeError);
+    } finally { globalThis.fetch = oldFetch; }
+});
+
+test('explicit WASM engine uses the Rust worklet with the same control contract', async () => {
+    globalThis.AudioWorkletNode = WorkletNode;
+    const oldFetch = globalThis.fetch;
+    const bytes = await readFile(new URL('../dist/wasm/noised_dsp.wasm', import.meta.url));
+    globalThis.fetch = async () => new Response(bytes);
+    const ctx = new Context();
+    try {
+        const controller = await NoiseDController.create(ctx, { thunderParams: { on: false } },
+            { engine: 'wasm', workletUrl: 'worklet.js', wasmUrl: 'kernel.wasm' });
+        assert.equal(controller.getEngine(), 'wasm');
+        await controller.start();
+        controller.updateRainParams({ dropRate: 120 });
+        assert.equal(controller.rain.worklet.messages.at(-1).params.dropRate, 120);
+        assert.equal(controller.rain.noiseNode, null);
+        controller.destroy();
+    } finally { globalThis.fetch = oldFetch; }
+});
