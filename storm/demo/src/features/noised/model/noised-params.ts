@@ -1,5 +1,5 @@
 import type { NoiseDParams } from 'noised-storm';
-import savedNoisedParams from "../../../../noised-params.json";
+import savedNoisedParams from "../../../../noised-params-default.json";
 import closeStormParams from "../../../../noised-params-close-storm.json";
 import farStormParams from "../../../../noised-params-far-storm.json";
 

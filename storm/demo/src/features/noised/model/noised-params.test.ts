@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import savedNoisedParams from "../../../../noised-params.json";
+import savedNoisedParams from "../../../../noised-params-default.json";
 import closeStormParams from "../../../../noised-params-close-storm.json";
 import farStormParams from "../../../../noised-params-far-storm.json";
 import { cloneNoisedParams, initialNoisedParams, noisedPresets } from "./noised-params";

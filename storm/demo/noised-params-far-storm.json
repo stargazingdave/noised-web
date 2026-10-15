@@ -71,14 +71,14 @@
   },
   "thunderParams": {
     "volume": {
-      "value": 0.65,
+      "value": 0.45,
       "rand": true,
       "dist": 0.2
     },
     "duration": {
-      "value": 3.3200000000000003,
+      "value": 4.45,
       "rand": true,
-      "dist": 1.9
+      "dist": 1.8
     },
     "filterFreq": {
       "value": 1400,
@@ -127,16 +127,16 @@
       "dist": 0.2
     },
     "eqGains": [
-      -8,
-      -8.4,
-      -6.5,
-      1.3,
-      8.3,
-      1.9,
-      -4.7,
-      3.5,
-      8.7,
-      3.2
+      -5.9,
+      -5.6,
+      -3.6,
+      -1.1,
+      3.3,
+      0.5,
+      -3.8,
+      2.2,
+      3,
+      -0.1
     ],
     "rumbleFreqStart": {
       "value": 30,
