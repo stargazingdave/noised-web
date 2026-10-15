@@ -27,6 +27,16 @@ test('EQ exposes a Flat reset and disables it when all bands are already flat', 
     assert.match(flat, /disabled=""/);
 });
 
+test('all visualization styles render on the server without audio or canvas access', () => {
+    for (const visualStyle of ['phosphor', 'aurora', 'valve', 'matrix']) {
+        for (const type of ['waveform', 'spectrum']) {
+            const markup = renderToStaticMarkup(createElement(Visualization, { analyser: null, isPlaying: false, visualStyle, type }));
+            assert.ok(markup.includes(`data-style="${visualStyle}"`));
+            assert.ok(markup.includes(`data-type="${type}"`));
+        }
+    }
+});
+
 test('multiple knobs have independent SVG gradients', () => {
     const markup = renderToStaticMarkup(createElement('div', null,
         ...[0, 1].map(value => createElement(Knob, { key: value, value, onChange() {} })),

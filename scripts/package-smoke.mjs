@@ -57,7 +57,7 @@ await writeFile(path.join(consumer, 'index.html'), '<!doctype html><html><head><
 await writeFile(path.join(consumer, 'main.tsx'), `
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Knob, Equalizer, AmpToggleSwitch, Visualization, type KnobProps, type VisualizationProps } from 'noised-ui';
+import { Knob, Equalizer, AmpToggleSwitch, Visualization, type KnobProps, type VisualizationProps, type VisualizationStyle } from 'noised-ui';
 import 'noised-ui/styles.css';
 function App() {
     const [gain, setGain] = useState(0);
@@ -65,7 +65,8 @@ function App() {
     const [enabled, setEnabled] = useState(true);
     const [compactGains, setCompactGains] = useState(Array(10).fill(0));
     const props: KnobProps = { label: 'Gain', value: gain, onChange: setGain, min: -12, max: 12, step: 0.5 };
-    const visualizationProps: VisualizationProps = { analyser: null, isPlaying: false, height: 80, label: 'Standalone visualization' };
+    const visualStyle: VisualizationStyle = 'valve';
+    const visualizationProps: VisualizationProps = { analyser: null, isPlaying: false, visualStyle, minFrequency: 20, maxFrequency: 12000, height: 80, label: 'Standalone visualization' };
     return <div>
         <h1>Standalone controls</h1>
         <Knob {...props} disabled={!enabled} />
@@ -167,6 +168,7 @@ try {
     assert.ok(await compact.getByRole('button', { name: 'Reset all bands to 0 dB', exact: true }).isDisabled());
     const visualization = page.getByRole('img', { name: 'Standalone visualization', exact: true });
     assert.equal((await visualization.boundingBox()).height, 80);
+    assert.equal(await visualization.getAttribute('data-style'), 'valve');
     await page.waitForFunction(() => document.querySelector('.noised-visualization__canvas').width === 300);
     const toggle = page.getByRole('switch', { name: 'Enabled' });
     await toggle.press('Space');

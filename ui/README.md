@@ -65,16 +65,28 @@ The Storm demo provides an example of these bindings.
   `disabled` and `className`. A keyboard-accessible switch with an amp-style lever.
 - **Visualization**: required `analyser` (`AnalyserNode | null`) and `isPlaying`.
   Optional `type` (`"waveform"` or `"spectrum"`), `barCount` (32), `color`,
-  `height` (120px, or a CSS length), `className`, and accessible `label`.
-  It resizes to its container, respects pixel density, clears while paused,
-  and cancels its animation on unmount. Supply `height="100%"` inside a
+  `height` (120px, or a CSS length), `className`, accessible `label`, and
+  `visualStyle` (`"phosphor"`, `"aurora"`, `"valve"`, or `"matrix"`).
+  These render glowing oscilloscope traces, colored ribbons over a nebula with
+  a reflective glass overlay, warm amber tube filaments, or an LED matrix. All four support both
+  waveform and spectrum modes. Spectrum range is configurable with
+  `minFrequency` (20 Hz) and `maxFrequency` (20000 Hz), capped at the analyser's
+  Nyquist frequency. It maps bars logarithmically within this range, averaging FFT
+  power within each band.
+  Invalid ranges fall back to the defaults; ranges entirely above Nyquist show
+  no activity. These props apply to spectrum mode in all four styles.
+  Heights use the analyser's decibel bounds; low-frequency detail is limited
+  by its FFT size. It resizes to its container, respects pixel
+  density, renders a static idle view while paused, and cancels its animation
+  on unmount. Reduced-motion preferences remove decorative drift and trails
+  while retaining the live audio readout. Supply `height="100%"` inside a
   container with an explicit height, as the Storm demo does.
 
 ```tsx
 import { Visualization } from 'noised-ui';
 
 <Visualization analyser={analyser} isPlaying={isPlaying} type="spectrum"
-  height={80} color="#9cd8e4" />
+  visualStyle="aurora" maxFrequency={12000} height={80} color="#9cd8e4" />
 <Equalizer gains={gains} freqs={frequencies} onChange={setBand}
   onReset={setGains} />
 ```

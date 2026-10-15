@@ -80,7 +80,12 @@ with `node scripts/generate-starfield.mjs`; the source project is not needed.
 The demo defaults to a dark holographic theme. The navbar offers saved light,
 dark, and system theme choices. The player has playback/status, a compact live
 visualization window, and master volume below its title and actions. A button
-beside the window switches between waveform and frequency bars. The master EQ
+beside the window switches between waveform and frequency bars; the style
+picker underneath offers Phosphor, Aurora, Valve, and Matrix. Aurora layers
+colored ribbons over a nebula background with glass reflections; Valve glows
+with warm amber tube filaments. The shared UI library owns all four renderers.
+Translucent panels reveal the
+starfield and reflected light. The master EQ
 opens from an EQ tab and is hidden initially. Rain and Thunder tabs include
 independent enable switches.
 

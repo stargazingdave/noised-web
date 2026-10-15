@@ -29,6 +29,12 @@ try {
         args: ['--autoplay-policy=no-user-gesture-required'] });
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' });
     const errors = [];
+    const visualStyles = ['Phosphor', 'Aurora', 'Valve', 'Matrix'];
+    const chooseVisualStyle = async name => {
+        await page.getByRole('button', { name: 'Visualization styles', exact: true }).click();
+        await page.getByRole('menuitemradio', { name, exact: true }).click();
+        await page.locator(`.noised-visualization[data-style="${name.toLowerCase()}"]`).waitFor();
+    };
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(() => {
         const probe = window.__stormProbe = { contexts: 0, worklets: 0, messages: [], analyser: null };
@@ -68,6 +74,13 @@ try {
     await page.getByRole('img', { name: 'Live frequency bars', exact: true }).waitFor();
     assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 0);
     await page.getByRole('button', { name: 'Show waveform', exact: true }).click();
+    await page.getByRole('button', { name: 'Visualization styles', exact: true }).click();
+    assert.equal(await page.getByRole('menuitemradio').count(), 4);
+    await page.screenshot({ path: path.join(artifacts, 'visualization-style-menu.png') });
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await page.locator('.noised-visualization[data-style="aurora"]').waitFor();
+    await chooseVisualStyle('Phosphor');
     await eqToggle.click();
     const masterBand = masterEq.getByRole('slider').first();
     await masterBand.press('ArrowUp');
@@ -144,7 +157,20 @@ try {
     assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 1);
     assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
     await page.locator('.storm-visualization-controls').screenshot({ path: path.join(artifacts, 'frequency-bars.png') });
+    for (const style of visualStyles) {
+        await chooseVisualStyle(style);
+        await page.waitForTimeout(100);
+        await page.locator('.storm-visualization-controls').screenshot({ path: path.join(artifacts, `style-${style.toLowerCase()}-spectrum.png`) });
+    }
     await page.getByRole('button', { name: 'Show waveform', exact: true }).click();
+    for (const style of visualStyles) {
+        await chooseVisualStyle(style);
+        await page.waitForTimeout(100);
+        await page.locator('.storm-visualization-controls').screenshot({ path: path.join(artifacts, `style-${style.toLowerCase()}-waveform.png`) });
+    }
+    await chooseVisualStyle('Phosphor');
+    assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 1);
+    assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
     await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('close-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
     const master = masterControls.getByRole('textbox', { name: 'Volume', exact: true });
@@ -186,6 +212,10 @@ try {
     await page.getByRole('tab', { name: 'Rain', exact: true }).click();
     await page.screenshot({ path: path.join(artifacts, 'demo-mobile.png'), fullPage: true });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+    await page.getByRole('button', { name: 'Visualization styles', exact: true }).click();
+    const menuBounds = await page.getByRole('dialog', { name: 'Visualization styles', exact: true }).boundingBox();
+    assert.ok(menuBounds.x >= 0 && menuBounds.x + menuBounds.width <= 391);
+    await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
     assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(5, 8, 17)');
     for (const [tab, instructions] of [
