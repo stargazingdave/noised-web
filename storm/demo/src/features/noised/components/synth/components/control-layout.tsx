@@ -6,7 +6,7 @@ export const EQ_FREQUENCIES = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16
 
 interface ControlGroupProps {
     children: ReactNode;
-    height?: number;
+    minHeight?: number;
     label: string;
     width?: number;
 }
@@ -15,11 +15,11 @@ export function ControlPanel({ children }: Readonly<{ children: ReactNode }>) {
     return <div className="control-panel">{children}</div>;
 }
 
-export function ControlGroup({ children, height = 190, label, width }: ControlGroupProps) {
+export function ControlGroup({ children, minHeight = 190, label, width }: ControlGroupProps) {
     return (
         <section
             className="control-group"
-            style={{ flexBasis: width, height, maxWidth: "100%" }}
+            style={{ flexBasis: width, minHeight, maxWidth: "100%" }}
         >
             <h3 className="control-group-title">{label}</h3>
             <div className="control-group-body">{children}</div>

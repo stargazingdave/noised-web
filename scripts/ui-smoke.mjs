@@ -236,13 +236,23 @@ try {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('tab', { name: 'Rain', exact: true }).click();
     await page.screenshot({ path: path.join(artifacts, 'demo-desktop-dark.png'), fullPage: true });
-    for (const width of [320, 390, 768, 1024]) {
+    for (const width of [320, 390, 768, 1024, 1100, 1101, 1280, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page.getByRole('button', { name: 'Show master EQ', exact: true }).click();
         for (const tab of ['Rain', 'Thunder']) {
             await page.getByRole('tab', { name: tab }).click();
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), tab + ' overflows at ' + width);
-            assert.ok(await page.locator('.control-group-body').evaluateAll(groups => groups.every(group => group.scrollWidth <= group.clientWidth + 1)), tab + ' has clipped controls at ' + width);
+            const overflowingGroups = await page.locator('.control-group-body').evaluateAll(groups => groups.flatMap(group => {
+                const bounds = group.getBoundingClientRect();
+                const clipped = group.scrollWidth > group.clientWidth + 1 || group.scrollHeight > group.clientHeight + 1
+                    || [...group.querySelectorAll('.noised-knob, .parameter-heading, .noised-switch, .control-select')].some(control => {
+                        const rect = control.getBoundingClientRect();
+                        return rect.left < bounds.left - 1 || rect.right > bounds.right + 1
+                            || rect.top < bounds.top - 1 || rect.bottom > bounds.bottom + 1;
+                    });
+                return clipped ? [group.closest('.control-group').querySelector('h3').textContent] : [];
+            }));
+            assert.deepEqual(overflowingGroups, [], tab + ' has clipped controls at ' + width);
             assert.ok(await masterControls.isVisible(), 'Master controls disappeared on ' + tab);
         }
         await page.getByRole('button', { name: 'Hide master EQ', exact: true }).click();
