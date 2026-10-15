@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NoiseDController } from 'noised-storm';
-import type { NoiseDParams, NoiseDEngine, NoiseType, Range, ThunderParams } from 'noised-storm';
+import type { NoiseDParams, NoiseType, Range, ThunderParams } from 'noised-storm';
 import workletUrl from 'noised-storm/rain.worklet.js?url';
 import wasmUrl from 'noised-storm/noised_dsp.wasm?url';
 import type { OscParam } from '../components/synth/types/osc-param';
@@ -40,9 +40,6 @@ function applySnapshot(controller: NoiseDController, params: NoiseDParams) {
 export function useNoisedController() {
     const [params, setParams] = useState(() => cloneNoisedParams(initialNoisedParams));
     const paramsRef = useRef(params);
-    const [engine, setEngine] = useState<NoiseDEngine>('wasm');
-    const engineRef = useRef<NoiseDEngine>('wasm');
-    const engineVersionRef = useRef(0);
     const controllerRef = useRef<NoiseDController | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const initializationRef = useRef<Promise<NoiseDController> | null>(null);
@@ -71,18 +68,13 @@ export function useNoisedController() {
         if (controllerRef.current) return controllerRef.current;
         if (initializationRef.current) return initializationRef.current;
         const lifetime = lifetimeRef.current;
-        const engineVersion = engineVersionRef.current;
-        const selectedEngine = engineRef.current;
         const ctx = audioContextRef.current ??= new AudioContext();
         // Resume directly from the button interaction, before asset loading.
         const resumed = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
         const pending = (async () => {
             await resumed;
-            const options = selectedEngine === 'wasm'
-                ? { engine: 'wasm' as const, workletUrl, wasmUrl }
-                : { engine: 'javascript' as const };
-            const controller = await NoiseDController.create(ctx, paramsRef.current, options);
-            if (lifetime !== lifetimeRef.current || engineVersion !== engineVersionRef.current) {
+            const controller = await NoiseDController.createWasm(ctx, paramsRef.current, { workletUrl, wasmUrl });
+            if (lifetime !== lifetimeRef.current) {
                 controller.destroy();
                 throw new Error('Player initialization was cancelled.');
             }
@@ -153,7 +145,16 @@ export function useNoisedController() {
         if (controllerRef.current) applySnapshot(controllerRef.current, next);
     };
 
-    const startPlayback = async (operation: number) => {
+    const toggle = async () => {
+        const operation = ++operationRef.current;
+        desiredPlaybackRef.current = !desiredPlaybackRef.current;
+        setError(null);
+        if (!desiredPlaybackRef.current) {
+            controllerRef.current?.stop();
+            setIsRunning(false);
+            setIsStarting(false);
+            return;
+        }
         setIsStarting(true);
         try {
             const controller = await initialize();
@@ -170,36 +171,6 @@ export function useNoisedController() {
         } finally { if (operation === operationRef.current) setIsStarting(false); }
     };
 
-    const toggle = async () => {
-        const operation = ++operationRef.current;
-        desiredPlaybackRef.current = !desiredPlaybackRef.current;
-        setError(null);
-        if (!desiredPlaybackRef.current) {
-            controllerRef.current?.stop();
-            setIsRunning(false);
-            setIsStarting(false);
-            return;
-        }
-        await startPlayback(operation);
-    };
-
-    const selectEngine = async (nextEngine: NoiseDEngine) => {
-        if (nextEngine === engineRef.current || isExporting) return;
-        const operation = ++operationRef.current;
-        ++engineVersionRef.current;
-        // Silence and release the previous graph before preparing its replacement.
-        controllerRef.current?.destroy();
-        controllerRef.current = null;
-        initializationRef.current = null;
-        engineRef.current = nextEngine;
-        setEngine(nextEngine);
-        setAnalyser(null);
-        setIsRunning(false);
-        setIsStarting(false);
-        setError(null);
-        if (desiredPlaybackRef.current) await startPlayback(operation);
-    };
-
     const exportWav = async (duration = 10) => {
         if (isExporting) return;
         setIsExporting(true);
@@ -212,7 +183,7 @@ export function useNoisedController() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `noised-storm-${engineRef.current}.wav`;
+            link.download = 'noised-storm.wav';
             link.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         } catch (cause) {
@@ -220,5 +191,5 @@ export function useNoisedController() {
         } finally { if (lifetime === lifetimeRef.current) setIsExporting(false); }
     };
 
-    return { actions, activePresetId, analyser, engine, selectEngine, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav };
+    return { actions, activePresetId, analyser, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav };
 }

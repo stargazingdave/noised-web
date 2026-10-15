@@ -4,10 +4,6 @@ import { OscParam } from "./types/OscParam";
 import { DeepPartial, mergeParams } from "./params";
 import { WasmRainOptions } from "./wasm";
 
-/** Both engines share the fixed controls, native effects, and thunder generator. */
-export type NoiseDEngine = 'javascript' | 'wasm';
-export type NoiseDEngineOptions = { engine: 'javascript' } | ({ engine: 'wasm' } & WasmRainOptions);
-
 export type Range<T = number> = {
     min: T;
     max: T;
@@ -72,17 +68,6 @@ export class NoiseDController<T extends BaseAudioContext = AudioContext> {
         last.connect(this.masterGain);
         this.masterGain.connect(this.ctx.destination);
         this._applyParams();
-    }
-
-    /** Select the fixed JavaScript/Web Audio engine or the Rust/WASM rain engine. */
-    public static async create<T extends BaseAudioContext>(ctx: T, params: DeepPartial<NoiseDParams> = {}, options: NoiseDEngineOptions = { engine: 'javascript' }): Promise<NoiseDController<T>> {
-        if (options.engine === 'javascript') return new NoiseDController(ctx, params);
-        if (options.engine === 'wasm') return NoiseDController.createWasm(ctx, params, options);
-        throw new RangeError('Unknown NoiseD Storm engine.');
-    }
-
-    public getEngine(): NoiseDEngine {
-        return this.wasmOptions ? 'wasm' : 'javascript';
     }
 
     public static async createWasm<T extends BaseAudioContext>(ctx: T, params: DeepPartial<NoiseDParams> = {}, options: WasmRainOptions): Promise<NoiseDController<T>> {

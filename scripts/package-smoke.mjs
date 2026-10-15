@@ -23,7 +23,7 @@ import { NoiseDStorm, NoiseDController, RainGenerator } from 'noised-storm';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 const require = createRequire(import.meta.url);
-if (NoiseDStorm !== NoiseDController || typeof RainGenerator !== 'function' || typeof NoiseDStorm.create !== 'function' || typeof NoiseDStorm.prototype.getEngine !== 'function' || typeof require('noised-storm').NoiseDStorm !== 'function') throw new Error('Invalid package API');
+if (NoiseDStorm !== NoiseDController || typeof RainGenerator !== 'function' || typeof require('noised-storm').NoiseDStorm !== 'function') throw new Error('Invalid package API');
 await WebAssembly.compile(readFileSync(require.resolve('noised-storm/noised_dsp.wasm')));
 if (!readFileSync(require.resolve('noised-storm/rain.worklet.js'), 'utf8').includes('registerProcessor')) throw new Error('Missing standalone worklet');
 console.log('Standalone package installed successfully: ESM, CommonJS, declarations, WASM and worklet assets.');

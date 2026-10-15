@@ -136,17 +136,3 @@ The name is David Portal, hi 😊
 I'll soon add a website with more of my projects.
 
 The branded `NoiseDStorm` export is an alias of `NoiseDController`; both names are supported.
-
-## Explicit engine selection
-
-Both engines include the fixed playback lifecycle and live controls:
-
-```ts
-import { NoiseDStorm } from 'noised-storm';
-
-const javascript = await NoiseDStorm.create(ctx, params, { engine: 'javascript' });
-const rust = await NoiseDStorm.create(ctx, params, { engine: 'wasm', workletUrl, wasmUrl });
-console.log(javascript.getEngine(), rust.getEngine()); // javascript, wasm
-```
-
-Start only the engine you are comparing. Destroy the previous controller before switching. The existing constructor still selects JavaScript/Web Audio, and createWasm still selects Rust/WASM. Offline WAV rendering retains the controller's selected engine. Thunder and native effects are shared; the rain synthesis and scheduling architectures differ.
