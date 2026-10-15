@@ -32,6 +32,7 @@ export function ThunderControls({ actions, colors, params }: ThunderControlsProp
                     colors={colors}
                     freqs={EQ_FREQUENCIES}
                     gains={thunder.eqGains}
+                    onReset={eqGains => actions.updateThunder({ eqGains })}
                     onChange={(index, value) => actions.updateThunder({
                         eqGains: thunder.eqGains.map((gain, gainIndex) => gainIndex === index ? value : gain),
                     })}

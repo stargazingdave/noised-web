@@ -40,13 +40,14 @@ if (NoiseDStorm !== NoiseDController || typeof RainGenerator !== 'function' || t
 await WebAssembly.compile(readFileSync(require.resolve('noised-storm/noised_dsp.wasm')));
 if (!readFileSync(require.resolve('noised-storm/rain.worklet.js'), 'utf8').includes('registerProcessor')) throw new Error('Missing standalone worklet');
 console.log('Standalone package installed successfully: ESM, CommonJS, declarations, WASM and worklet assets.');
-const { Knob, Equalizer, AmpToggleSwitch } = await import('noised-ui');
+const { Knob, Equalizer, AmpToggleSwitch, Visualization } = await import('noised-ui');
 const { createElement } = await import('react');
 const { renderToStaticMarkup } = await import('react-dom/server');
-for (const [component, props] of [[Knob, { value: 0, onChange() {} }], [Equalizer, { gains: [0], freqs: [100], onChange() {} }], [AmpToggleSwitch, { checked: false, onChange() {} }]]) {
+for (const [component, props] of [[Knob, { value: 0, onChange() {} }], [Equalizer, { gains: [0], freqs: [100], onChange() {} }], [AmpToggleSwitch, { checked: false, onChange() {} }], [Visualization, { analyser: null, isPlaying: false }]]) {
     if (!renderToStaticMarkup(createElement(component, props)).length) throw new Error('UI SSR failed');
 }
 if (typeof require('noised-ui').Knob !== 'function') throw new Error('Missing UI CommonJS export');
+if (typeof require('noised-ui').Visualization !== 'function') throw new Error('Missing Visualization CommonJS export');
 if (!readFileSync(require.resolve('noised-ui/styles.css'), 'utf8').includes('.noised-knob')) throw new Error('Missing UI CSS export');
 `], { cwd: consumer, stdio: 'inherit' });
 if (result.status !== 0) throw new Error('Standalone consumer check failed');
@@ -56,7 +57,7 @@ await writeFile(path.join(consumer, 'index.html'), '<!doctype html><html><head><
 await writeFile(path.join(consumer, 'main.tsx'), `
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Knob, Equalizer, AmpToggleSwitch, type KnobProps } from 'noised-ui';
+import { Knob, Equalizer, AmpToggleSwitch, Visualization, type KnobProps, type VisualizationProps } from 'noised-ui';
 import 'noised-ui/styles.css';
 function App() {
     const [gain, setGain] = useState(0);
@@ -64,6 +65,7 @@ function App() {
     const [enabled, setEnabled] = useState(true);
     const [compactGains, setCompactGains] = useState(Array(10).fill(0));
     const props: KnobProps = { label: 'Gain', value: gain, onChange: setGain, min: -12, max: 12, step: 0.5 };
+    const visualizationProps: VisualizationProps = { analyser: null, isPlaying: false, height: 80, label: 'Standalone visualization' };
     return <div>
         <h1>Standalone controls</h1>
         <Knob {...props} disabled={!enabled} />
@@ -73,14 +75,17 @@ function App() {
         <Knob {...props} label="Compact gain" density="compact" />
         <section id="compact-eq" aria-label="Compact EQ" style={{ width: 300 }}>
             <Equalizer density="compact" gains={compactGains} freqs={[31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]}
-                onChange={(index, value) => setCompactGains(current => current.map((gain, i) => i === index ? value : gain))} />
+                onChange={(index, value) => setCompactGains(current => current.map((gain, i) => i === index ? value : gain))} onReset={setCompactGains} />
         </section>
+        <div style={{ width: 300 }}><Visualization {...visualizationProps} /></div>
     </div>;
 }
 createRoot(document.getElementById('root')!).render(<App />);
 `);
 await writeFile(path.join(consumer, 'types.cts'), `import { Knob, type KnobProps } from 'noised-ui';
 const props: KnobProps = { value: 0, onChange(value: number) {} }; void Knob; void props;
+import { Visualization, type VisualizationProps } from 'noised-ui';
+const visualization: VisualizationProps = { analyser: null, isPlaying: false }; void Visualization; void visualization;
 `);
 const compiler = require.resolve('typescript/bin/tsc');
 for (const [module, resolution, file] of [['ESNext', 'bundler', 'main.tsx'], ['NodeNext', 'NodeNext', 'types.cts']]) {
@@ -116,6 +121,11 @@ try {
     const bandBounds = await band.boundingBox();
     await page.mouse.click(bandBounds.x + bandBounds.width / 2, bandBounds.y + bandBounds.height * 0.25);
     assert.ok(Number(await band.getAttribute('aria-valuenow')) > 5);
+    const defaultEq = page.getByRole('region', { name: 'Default EQ' });
+    await defaultEq.getByRole('slider').first().press('End');
+    await defaultEq.getByRole('slider').last().press('Home');
+    await defaultEq.getByRole('button', { name: 'Reset all bands to 0 dB', exact: true }).click();
+    assert.ok(await defaultEq.getByRole('slider').evaluateAll(bands => bands.every(band => band.getAttribute('aria-valuenow') === '0')));
     const compact = page.getByRole('region', { name: 'Compact EQ' });
     assert.equal((await compact.locator('.noised-equalizer').boundingBox()).height, 128);
     assert.equal((await page.getByRole('slider', { name: 'Compact gain', exact: true }).boundingBox()).width, 64);
@@ -152,6 +162,12 @@ try {
     assert.ok(await compact.evaluate(section => section.scrollWidth <= section.clientWidth));
     await compact.evaluate(section => { section.style.width = '300px'; });
     await compact.locator('.noised-equalizer__scale').waitFor();
+    await compact.getByRole('button', { name: 'Reset all bands to 0 dB', exact: true }).click();
+    assert.ok(await compact.getByRole('slider').evaluateAll(bands => bands.every(band => band.getAttribute('aria-valuenow') === '0')));
+    assert.ok(await compact.getByRole('button', { name: 'Reset all bands to 0 dB', exact: true }).isDisabled());
+    const visualization = page.getByRole('img', { name: 'Standalone visualization', exact: true });
+    assert.equal((await visualization.boundingBox()).height, 80);
+    await page.waitForFunction(() => document.querySelector('.noised-visualization__canvas').width === 300);
     const toggle = page.getByRole('switch', { name: 'Enabled' });
     await toggle.press('Space');
     assert.equal(await toggle.getAttribute('aria-checked'), 'false');

@@ -10,9 +10,11 @@ export interface NoisedActions {
     setMasterVolume: (value: number) => void;
     setThunderDelay: (bound: keyof Range<number>, value: number) => void;
     setMasterEqGain: (index: number, value: number) => void;
+    setMasterEqGains: (gains: number[]) => void;
     setRainVolume: (value: number) => void;
     setRainNoiseLevel: (value: number) => void;
     setRainEqGain: (index: number, value: number) => void;
+    setRainEqGains: (gains: number[]) => void;
     setRainNoiseType: (value: NoiseType) => void;
     setRainNoiseFilterFrequency: (value: OscParam) => void;
     setRainDropDryLevel: (value: number) => void;
@@ -118,9 +120,15 @@ export function useNoisedController() {
             commitParams(current => ({ ...current, eqGains: current.eqGains.map((gain, i) => i === index ? value : gain) }));
             controllerRef.current?.setEqGain(index, value);
         },
+        setMasterEqGains(gains) {
+            const next = [...gains];
+            commitParams(current => ({ ...current, eqGains: next }));
+            next.forEach((gain, index) => controllerRef.current?.setEqGain(index, gain));
+        },
         setRainVolume: value => updateRain({ volume: value }),
         setRainNoiseLevel: value => updateRain({ noiseLevel: value }),
         setRainEqGain: (index, value) => updateRain({ eqGains: paramsRef.current.rainParams.eqGains.map((gain, i) => i === index ? value : gain) }),
+        setRainEqGains: gains => updateRain({ eqGains: [...gains] }),
         setRainNoiseType: value => updateRain({ noiseType: value }),
         setRainNoiseFilterFrequency: value => updateRain({ noiseFilterFreq: value }),
         setRainDropDryLevel: value => updateRain({ dropDryLevel: value }),

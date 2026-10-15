@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 
-interface VisualizationProps {
+export type VisualizationType = 'waveform' | 'spectrum';
+
+export interface VisualizationProps {
     analyser: AnalyserNode | null;
     isPlaying: boolean;
-    type?: "waveform" | "spectrum";
+    type?: VisualizationType;
     barCount?: number;
     color?: string;
+    height?: number | string;
+    className?: string;
+    label?: string;
 }
 
 interface CanvasSize {
@@ -29,6 +34,9 @@ export function Visualization({
     type = "waveform",
     barCount = 32,
     color = '#9cd8e4',
+    height = 120,
+    className = '',
+    label = type === 'waveform' ? 'Live audio waveform' : 'Live frequency bars',
 }: VisualizationProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -73,30 +81,28 @@ export function Visualization({
             return;
         }
 
-        const data = new Uint8Array(analyser.frequencyBinCount);
-        const safeBarCount = Math.max(barCount, 3);
+        const data = new Uint8Array(type === 'waveform' ? analyser.fftSize : analyser.frequencyBinCount);
+        const safeBarCount = Number.isFinite(barCount) ? Math.max(Math.floor(barCount), 3) : 32;
         const previousHeights = new Array<number>(safeBarCount).fill(0);
         let animationFrameId = 0;
 
         const drawSpectrum = () => {
             analyser.getByteFrequencyData(data);
-            context.fillStyle = "rgba(0, 0, 0, 0.8)";
-            context.fillRect(0, 0, canvasSize.width, canvasSize.height);
+            context.clearRect(0, 0, canvasSize.width, canvasSize.height);
+            context.fillStyle = color;
 
             const barWidth = canvasSize.width / safeBarCount;
             for (let index = 0; index < safeBarCount; index += 1) {
                 const dataIndex = getSkewedIndex(index, safeBarCount, data.length);
                 const previousIndex = getSkewedIndex(index - 1, safeBarCount, data.length);
                 const nextIndex = getSkewedIndex(index + 1, safeBarCount, data.length);
-                const value = data[dataIndex] * 0.4 + (data[previousIndex] + data[nextIndex]) / 2.3;
+                const value = data[dataIndex] * 0.5 + (data[previousIndex] + data[nextIndex]) * 0.25;
                 const targetHeight = (value / 255) * canvasSize.height;
                 const barHeight = Math.max(targetHeight, previousHeights[index] * 0.8);
                 previousHeights[index] = barHeight;
 
-                const hue = (index / safeBarCount) * 50;
-                const lightness = 50 + (value / 255) * 50;
-                context.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
-                context.fillRect(index * barWidth, canvasSize.height - barHeight, barWidth, barHeight);
+                const gap = Math.min(2, barWidth * 0.3);
+                context.fillRect(index * barWidth + gap / 2, canvasSize.height - barHeight, barWidth - gap, barHeight);
             }
         };
 
@@ -130,8 +136,9 @@ export function Visualization({
     }, [analyser, barCount, canvasSize, color, isPlaying, type]);
 
     return (
-        <div ref={containerRef} className="storm-visualization">
-            <canvas ref={canvasRef} className="storm-visualization-canvas" />
+        <div ref={containerRef} className={`noised-visualization ${className}`} style={{ height }}
+            role="img" aria-label={label} data-type={type}>
+            <canvas ref={canvasRef} className="noised-visualization__canvas" aria-hidden="true" />
         </div>
     );
 }

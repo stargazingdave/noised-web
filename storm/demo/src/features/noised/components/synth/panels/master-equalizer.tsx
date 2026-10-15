@@ -17,6 +17,7 @@ export function MasterEqualizer({ actions, colors, params }: MasterEqualizerProp
             gains={params.eqGains}
             density="compact"
             onChange={actions.setMasterEqGain}
+            onReset={actions.setMasterEqGains}
         />
     );
 }

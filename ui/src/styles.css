@@ -1,6 +1,6 @@
 /* NoiseD UI styles are scoped to components; no page reset or theme provider is required. */
-:where(.noised-knob, .noised-equalizer, .noised-switch),
-:where(.noised-knob, .noised-equalizer, .noised-switch) * {
+:where(.noised-knob, .noised-equalizer, .noised-switch, .noised-visualization),
+:where(.noised-knob, .noised-equalizer, .noised-switch, .noised-visualization) * {
   box-sizing: border-box;
 }
 
@@ -47,7 +47,7 @@
   text-align: center;
 }
 
-.noised-equalizer { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px 8px; width: 100%; min-width: 0; font-family: inherit; font-size: 11px; line-height: 1; }
+.noised-equalizer { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 6px 8px; width: 100%; min-width: 0; font-family: inherit; font-size: 11px; line-height: 1; }
 .noised-equalizer[data-density="compact"] { gap: 5px 6px; font-size: 10px; }
 .noised-equalizer__scale {
   position: relative;
@@ -72,6 +72,13 @@
 .noised-equalizer__readout { position: absolute; z-index: 1; top: 4px; left: 50%; transform: translateX(-50%); padding: 5px 6px; border-radius: 3px; background: #161b22; color: #fff; font: 11px/1.2 monospace; white-space: nowrap; pointer-events: none; }
 .noised-equalizer__slider:first-child .noised-equalizer__readout { left: 0; transform: none; }
 .noised-equalizer__slider:last-child .noised-equalizer__readout { right: 0; left: auto; transform: none; }
+.noised-equalizer__footer { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+.noised-equalizer__reset { min-height: 24px; margin: 0; padding: 3px 8px; border: 1px solid currentColor; border-radius: 3px; background: transparent; color: inherit; font: inherit; line-height: 1; cursor: pointer; }
+.noised-equalizer__reset:hover:not(:disabled) { background: rgb(128 128 128 / 12%); }
+.noised-equalizer__reset:disabled { opacity: 0.4; cursor: default; }
+
+.noised-visualization { position: relative; min-width: 0; width: 100%; overflow: hidden; }
+.noised-visualization__canvas { position: absolute; inset: 0; display: block; }
 
 .noised-switch { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; line-height: 1rem; user-select: none; }
 .noised-switch__label { margin-bottom: 0.25rem; }
@@ -119,6 +126,7 @@
 .noised-knob__dial:focus-visible,
 .noised-knob__input:focus-visible,
 .noised-equalizer__slider:focus-visible,
+.noised-equalizer__reset:focus-visible,
 .noised-switch__button:focus-visible { outline: 2px solid var(--noised-focus-color, #de006b); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {

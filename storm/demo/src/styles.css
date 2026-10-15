@@ -87,8 +87,11 @@ select option { background: var(--popover); color: var(--foreground); }
 .storm-brand-title { font-size: 1.5rem; font-weight: 400; letter-spacing: -0.02em; }
 .storm-middle { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: 1.25rem 1.5rem; }
 .storm-transport { display: flex; align-items: center; gap: 0.75rem; }
-.storm-scope { position: relative; width: 40%; max-width: 320px; height: 72px; overflow: hidden; border: 1px solid var(--border); border-radius: 3px; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 20px 20px, linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 20px 20px, var(--surface-soft); }
+.storm-visualization-controls { display: flex; width: 40%; max-width: 372px; min-width: 0; align-items: center; gap: 8px; }
+.storm-visualization-toggle { width: 44px; height: 44px; padding: 0; flex-shrink: 0; }
+.storm-scope { position: relative; flex: 1; min-width: 0; height: 72px; overflow: hidden; border: 1px solid var(--border); border-radius: 3px; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 20px 20px, linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 20px 20px, var(--surface-soft); }
 .storm-scope[data-playing="false"]::after { content: ''; position: absolute; top: 50%; right: 0; left: 0; border-top: 1px solid var(--corner); opacity: 0.5; pointer-events: none; }
+.storm-scope[data-playing="false"][data-visualization="spectrum"]::after { top: auto; bottom: 0; }
 .storm-eq-bar { padding: 0 1.5rem; border-top: 1px solid var(--border); }
 .storm-eq-toggle { display: inline-flex; min-width: 72px; min-height: 44px; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border-bottom: 2px solid transparent; color: var(--muted-foreground); font: 11px Consolas, monospace; letter-spacing: 0.08em; }
 .storm-eq-toggle:hover { color: var(--accent); background: var(--accent-soft); }
@@ -120,8 +123,6 @@ select option { background: var(--popover); color: var(--foreground); }
 .storm-layer-toggle .noised-switch__label { display: none; }
 .storm-layer-toggle .noised-switch__button::before { content: ''; position: absolute; inset: -10px; }
 .storm-tab-panel { display: flex; flex-direction: column; }
-.storm-visualization { position: relative; height: 100%; width: 100%; }
-.storm-visualization-canvas { position: absolute; inset: 0; }
 
 .control-panel { position: relative; display: flex; width: 100%; min-width: 0; flex-wrap: wrap; align-items: stretch; gap: 8px; }
 .control-group { position: relative; display: flex; min-width: 0; flex-grow: 1; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 3px; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 28px 28px, linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 28px 28px, var(--surface); box-shadow: inset 0 0 32px #7ad9e805, 0 0 28px #6ee6ff05; backdrop-filter: blur(5px); }
@@ -168,6 +169,7 @@ select option { background: var(--popover); color: var(--foreground); }
 .noised-equalizer { font-family: Consolas, monospace; }
 .noised-equalizer__bar { border: 1px solid var(--border); }
 .noised-equalizer__thumb { background: var(--accent); }
+.noised-equalizer__reset { border-color: var(--border); background: var(--surface-soft); color: var(--accent); }
 .noised-switch { color: var(--muted-foreground); font: 10px Consolas, monospace; }
 .noised-switch__button { border-color: var(--border); background: var(--surface-soft); box-shadow: none; }
 .noised-switch__ring { border-color: var(--corner); background: var(--surface); box-shadow: none; }
@@ -223,7 +225,8 @@ select option { background: var(--popover); color: var(--foreground); }
   .storm-toolbar { gap: 1rem; padding: 1.25rem 1.25rem 0; }
   .storm-brand-title { font-size: 1.375rem; }
   .storm-middle { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding: 1.25rem; }
-  .storm-scope { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: none; height: 60px; }
+  .storm-visualization-controls { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: none; }
+  .storm-scope { height: 60px; }
   .storm-eq-bar { padding: 0 1.25rem; }
   .storm-player-actions { width: 100%; gap: 0.5rem; justify-content: flex-end; }
   .storm-preset { flex: 1; flex-wrap: wrap; gap: 0.5rem; }

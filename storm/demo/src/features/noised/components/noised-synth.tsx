@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { IoChevronDownOutline, IoDownloadOutline, IoSave } from "react-icons/io5";
-import { AmpToggleSwitch } from "noised-ui";
+import { IoBarChartOutline, IoChevronDownOutline, IoDownloadOutline, IoPulseOutline, IoSave } from "react-icons/io5";
+import { AmpToggleSwitch, Visualization, type VisualizationType } from "noised-ui";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/components/theme/theme-provider";
 import { useNoisedController } from "../hooks/use-noised-controller";
@@ -9,7 +9,6 @@ import { MasterEqualizer } from "./synth/panels/master-equalizer";
 import { ThemedKnob } from "./synth/components/themed-knob";
 import { RainControls } from "./synth/panels/rain-controls";
 import { ThunderControls } from "./synth/panels/thunder-controls";
-import { Visualization } from "./visualization";
 
 type ControlTab = "rain" | "thunder";
 
@@ -46,6 +45,8 @@ export function NoisedSynth() {
     const { actions, activePresetId, analyser, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav } = useNoisedController();
     const [selectedTab, setSelectedTab] = useState<ControlTab>("rain");
     const [showMasterEq, setShowMasterEq] = useState(false);
+    const [visualizationType, setVisualizationType] = useState<VisualizationType>('waveform');
+    const visualizationLabel = visualizationType === 'waveform' ? 'Show frequency bars' : 'Show waveform';
     const playbackLabel = isStarting ? "Cancel start" : isRunning ? "Pause Storm" : "Play Storm";
     const equalizerColors = resolvedTheme === "dark"
         ? { background: "#142932", bar: "linear-gradient(0deg, #345a68, #9cd8e4)", Hz: "#9bb6c2", dB: "#9bb6c2" }
@@ -114,9 +115,20 @@ export function NoisedSynth() {
                         </Tooltip>
                         <span className="storm-status" data-running={isRunning} role="status"><span aria-hidden="true" />{isStarting ? 'Starting…' : isRunning ? 'Playing' : 'Standby'}</span>
                     </div>
-                    <div className="storm-scope" role="img" aria-label="Live audio waveform" data-playing={isRunning}>
-                        <Visualization analyser={analyser} isPlaying={isRunning} type="waveform" barCount={48}
-                            color={resolvedTheme === 'dark' ? '#9cd8e4' : '#3e7184'} />
+                    <div className="storm-visualization-controls">
+                        <div className="storm-scope" data-playing={isRunning} data-visualization={visualizationType}>
+                            <Visualization height="100%" analyser={analyser} isPlaying={isRunning} type={visualizationType} barCount={48}
+                                color={resolvedTheme === 'dark' ? '#9cd8e4' : '#3e7184'} />
+                        </div>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button type="button" className="demo-button storm-visualization-toggle" aria-label={visualizationLabel}
+                                    onClick={() => setVisualizationType(current => current === 'waveform' ? 'spectrum' : 'waveform')}>
+                                    {visualizationType === 'waveform' ? <IoBarChartOutline aria-hidden size={19} /> : <IoPulseOutline aria-hidden size={19} />}
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" sideOffset={8}>{visualizationLabel}</TooltipContent>
+                        </Tooltip>
                     </div>
                     <div className="storm-master-volume">
                         <ThemedKnob label="Volume" value={params.masterVolume} min={0} max={1}

@@ -59,11 +59,15 @@ try {
     assert.equal(await eqToggle.getAttribute('aria-expanded'), 'false');
     assert.equal(await masterEq.isVisible(), false);
     assert.equal((await eqToggle.textContent()).trim(), 'EQ');
-    const scopeBounds = await page.getByRole('img', { name: 'Live audio waveform' }).boundingBox();
+    const scopeBounds = await page.locator('.storm-scope').boundingBox();
     const playBounds = await page.getByRole('button', { name: 'Play Storm', exact: true }).boundingBox();
     const volumeBounds = await masterControls.getByRole('slider', { name: 'Volume', exact: true }).boundingBox();
     assert.ok(scopeBounds.width <= 320 && scopeBounds.height === 72);
     assert.ok(playBounds.x < scopeBounds.x && scopeBounds.x < volumeBounds.x);
+    await page.getByRole('button', { name: 'Show frequency bars', exact: true }).click();
+    await page.getByRole('img', { name: 'Live frequency bars', exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 0);
+    await page.getByRole('button', { name: 'Show waveform', exact: true }).click();
     await eqToggle.click();
     const masterBand = masterEq.getByRole('slider').first();
     await masterBand.press('ArrowUp');
@@ -72,6 +76,8 @@ try {
     assert.equal(await masterEq.isVisible(), false);
     await eqToggle.click();
     assert.equal(await masterEq.getByRole('slider').first().getAttribute('aria-valuenow'), editedGain);
+    await masterEq.getByRole('button', { name: 'Reset all bands to 0 dB', exact: true }).click();
+    assert.ok(await masterEq.getByRole('slider').evaluateAll(bands => bands.every(band => band.getAttribute('aria-valuenow') === '0')));
     await page.getByRole('button', { name: 'Hide master EQ', exact: true }).click();
     assert.equal(await page.getByRole('button', { name: 'Play Storm', exact: true }).textContent(), '');
     assert.ok(await page.locator('.demo-brand img').evaluate(img => img.complete && img.naturalWidth > 0));
@@ -93,6 +99,16 @@ try {
     await page.waitForFunction(() => !document.documentElement.classList.contains('dark'));
     assert.equal(await page.evaluate(() => localStorage.getItem('noised-storm-theme')), 'system');
     await page.getByRole('button', { name: 'Light theme', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('far-storm');
+    for (const tab of ['Rain', 'Thunder']) {
+        await page.getByRole('tab', { name: tab, exact: true }).click();
+        const eq = page.getByRole('tabpanel').locator('.noised-equalizer');
+        await eq.getByRole('slider').first().press('ArrowUp');
+        await eq.getByRole('slider').last().press('ArrowDown');
+        await eq.getByRole('button', { name: 'Reset all bands to 0 dB', exact: true }).click();
+        assert.ok(await eq.getByRole('slider').evaluateAll(bands => bands.every(band => band.getAttribute('aria-valuenow') === '0')), tab + ' EQ failed to reset all bands');
+    }
+    await page.getByRole('tab', { name: 'Rain', exact: true }).click();
     await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('far-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 0);
     assert.equal(await page.getByRole('button', { name: 'Play Storm' }).getAttribute('aria-pressed'), 'false');
@@ -118,6 +134,17 @@ try {
         const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
         return pixels.some((value, index) => index % 4 === 3 && value > 0);
     });
+    await page.getByRole('button', { name: 'Show frequency bars', exact: true }).click();
+    await page.getByRole('img', { name: 'Live frequency bars', exact: true }).waitFor();
+    await page.waitForFunction(() => {
+        const canvas = document.querySelector('.storm-scope canvas');
+        const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+        return pixels.some((value, index) => index % 4 === 3 && value > 0);
+    });
+    assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 1);
+    assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
+    await page.locator('.storm-visualization-controls').screenshot({ path: path.join(artifacts, 'frequency-bars.png') });
+    await page.getByRole('button', { name: 'Show waveform', exact: true }).click();
     await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('close-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
     const master = masterControls.getByRole('textbox', { name: 'Volume', exact: true });

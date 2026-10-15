@@ -1,8 +1,10 @@
 # NoiseD UI
 
-React controls for audio interfaces: `Knob`, `Equalizer`, and `AmpToggleSwitch`.
+React controls for audio interfaces: `Knob`, `Equalizer`, `AmpToggleSwitch`, and `Visualization`.
 The package includes ESM, CommonJS, TypeScript declarations and scoped plain CSS.
-It has no dependency on NoiseD Storm, Web Audio, Tailwind, or a theme provider.
+It has no dependency on NoiseD Storm, Tailwind, or a theme provider. The
+visualization reads a caller-provided Web Audio `AnalyserNode`; it does not
+create an audio context or start playback.
 
 ## Install and use
 
@@ -54,8 +56,28 @@ The Storm demo provides an example of these bindings.
   Home/End, Shift for fine adjustment, and double-click to reset a band to 0 dB.
   Frequency labels align with the faders; guides include the zero-dB position.
   The dB scale adapts to available width, and hover/focus shows the exact gain.
+  **Flat** resets all bands to 0 dB and is disabled when already flat. Optional
+  `onReset(gains)` receives the complete reset array for an atomic state update;
+  otherwise `onChange(index, value)` is called for each band. Use functional
+  state updates in that callback. For ranges excluding zero, reset uses the
+  nearest allowed gain.
 - **AmpToggleSwitch**: required `checked` and `onChange`; optional `label`,
   `disabled` and `className`. A keyboard-accessible switch with an amp-style lever.
+- **Visualization**: required `analyser` (`AnalyserNode | null`) and `isPlaying`.
+  Optional `type` (`"waveform"` or `"spectrum"`), `barCount` (32), `color`,
+  `height` (120px, or a CSS length), `className`, and accessible `label`.
+  It resizes to its container, respects pixel density, clears while paused,
+  and cancels its animation on unmount. Supply `height="100%"` inside a
+  container with an explicit height, as the Storm demo does.
+
+```tsx
+import { Visualization } from 'noised-ui';
+
+<Visualization analyser={analyser} isPlaying={isPlaying} type="spectrum"
+  height={80} color="#9cd8e4" />
+<Equalizer gains={gains} freqs={frequencies} onChange={setBand}
+  onReset={setGains} />
+```
 
 Prop/color interfaces are exported alongside the components. Use a positive
 `step` and `max > min` for numeric controls.

@@ -12,6 +12,7 @@ export interface EqualizerProps {
     gains: readonly number[];
     freqs: readonly number[];
     onChange: (index: number, value: number) => void;
+    onReset?: (gains: number[]) => void;
     min?: number;
     max?: number;
     colors?: EqualizerColors;
@@ -33,6 +34,7 @@ export function Equalizer({
     gains,
     freqs,
     onChange,
+    onReset,
     min = -12,
     max = 12,
     colors = {},
@@ -140,6 +142,15 @@ export function Equalizer({
                     style={{ color: colors.Hz, transform: rotateLabels ? `rotate(${rotateLabels}deg)` : undefined }}>
                     {formatFrequency(freqs[index] ?? 0).replace('.0k', 'k')}
                 </span>)}
+            </div>
+            <div className="noised-equalizer__footer">
+                <button type="button" className="noised-equalizer__reset" aria-label="Reset all bands to 0 dB"
+                    title="Reset all bands to 0 dB" disabled={gains.every(gain => gain === clamp(0))}
+                    onClick={() => {
+                        const flat = gains.map(() => clamp(0));
+                        if (onReset) onReset(flat);
+                        else flat.forEach((gain, index) => onChange(index, gain));
+                    }}>Flat</button>
             </div>
         </div>
     );

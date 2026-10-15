@@ -28,7 +28,7 @@ export function RainControls({ actions, colors, params }: RainControlsProps) {
                 <ThemedKnob label="Volume" value={rain.volume} min={0} max={1} step={0.01} onChange={actions.setRainVolume} />
             </ControlGroup>
             <ControlGroup label="Rain EQ" width={320}>
-                <Equalizer density="compact" colors={colors} freqs={EQ_FREQUENCIES} gains={rain.eqGains} onChange={actions.setRainEqGain} />
+                <Equalizer density="compact" colors={colors} freqs={EQ_FREQUENCIES} gains={rain.eqGains} onChange={actions.setRainEqGain} onReset={actions.setRainEqGains} />
             </ControlGroup>
             <ControlGroup label="Background Noise" width={360}>
                 <div className="control-row">

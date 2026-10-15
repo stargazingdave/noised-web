@@ -2,17 +2,29 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Knob, Equalizer, AmpToggleSwitch } from '../dist/index.js';
+import { Knob, Equalizer, AmpToggleSwitch, Visualization } from '../dist/index.js';
 
 test('controls render on the server without a browser or audio engine', () => {
     const markup = renderToStaticMarkup(createElement('div', null,
         createElement(Knob, { label: 'Gain', min: -12, max: 12, value: 0, onChange() {} }),
         createElement(Equalizer, { gains: [0, 3], freqs: [100, 1000], onChange() {} }),
         createElement(AmpToggleSwitch, { label: 'Bypass', checked: true, onChange() {} }),
+        createElement(Visualization, { analyser: null, isPlaying: false, height: 80 }),
     ));
     assert.match(markup, /aria-label="Gain"/);
     assert.match(markup, /aria-label="Gain at 1.0k"/);
     assert.match(markup, /role="switch" aria-checked="true"/);
+    assert.match(markup, /noised-visualization/);
+    assert.match(markup, /aria-label="Live audio waveform"/);
+});
+
+test('EQ exposes a Flat reset and disables it when all bands are already flat', () => {
+    const nonFlat = renderToStaticMarkup(createElement(Equalizer, { gains: [0, 4, -3], freqs: [100, 1000, 10000], onChange() {} }));
+    assert.match(nonFlat, /aria-label="Reset all bands to 0 dB"/);
+    assert.match(nonFlat, />Flat<\/button>/);
+    assert.doesNotMatch(nonFlat, /disabled=""/);
+    const flat = renderToStaticMarkup(createElement(Equalizer, { gains: [0, 0], freqs: [100, 1000], onChange() {} }));
+    assert.match(flat, /disabled=""/);
 });
 
 test('multiple knobs have independent SVG gradients', () => {
