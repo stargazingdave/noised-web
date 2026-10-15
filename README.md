@@ -104,21 +104,27 @@ consumer and checks their public exports, assets and UI behavior. Use
 
 The player preserves controls while paused, changes presets without recreating
 the audio graph, supports rain/thunder enable switches, and downloads parameter
-JSON or a ten-second stereo WAV.
+named preset JSON files or a stereo WAV with a selectable length (1–300 seconds).
+The Presets tool loads JSON into the live player and keeps imported presets in
+the session list. It also accepts the earlier plain parameter JSON files.
 
 The demo's flat starfield uses the same seeded stars and sky palette as the
 sibling `David/spaceship` project, projected to a standalone SVG. Regenerate it
 with `node scripts/generate-starfield.mjs`; the source project is not needed.
-The demo defaults to a dark holographic theme. The navbar offers saved light,
-dark, and system theme choices. The player has playback/status, a compact live
+The demo defaults to a dark holographic theme. The compact sticky navbar offers
+saved light, dark, and system theme choices. The player has playback/status, a live
 visualization window, and master volume below its title and actions. A button
 beside the window switches between waveform and frequency bars; the style
 picker underneath offers Phosphor, Aurora, Valve, and Matrix. Aurora layers
 colored ribbons over a nebula background with glass reflections; Valve glows
 with warm amber tube filaments. The shared UI library owns all four renderers.
 Translucent panels reveal the
-starfield and reflected light. The master EQ
-opens from an EQ tab and is hidden initially. Rain and Thunder tabs include
+starfield and reflected light. The EQ button switches to the master EQ, passing
+the live visualization as its `barsBackground`, behind only the frequency bars.
+The scale, frequency labels and Flat button stay clear. The toolbar below
+contains Presets and Export tools. Focused player components share one
+`NoisedControllerProvider` for playback, controls, visualization and file tools.
+Rain and Thunder tabs include
 independent enable switches.
 
 ## Sound-quality research

@@ -3,7 +3,7 @@ import savedNoisedParams from "../../../../noised-params-default.json";
 import closeStormParams from "../../../../noised-params-close-storm.json";
 import farStormParams from "../../../../noised-params-far-storm.json";
 
-export type NoisedPresetId = "default" | "close-storm" | "far-storm";
+export type NoisedPresetId = "default" | "close-storm" | "far-storm" | `imported-${string}`;
 
 export interface NoisedPreset {
     id: NoisedPresetId;

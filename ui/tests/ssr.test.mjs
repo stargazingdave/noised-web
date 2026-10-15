@@ -27,6 +27,16 @@ test('EQ exposes a Flat reset and disables it when all bands are already flat', 
     assert.match(flat, /disabled=""/);
 });
 
+test('EQ accepts decorative React content behind its bars', () => {
+    const markup = renderToStaticMarkup(createElement(Equalizer, {
+        gains: [0, 3], freqs: [100, 1000], onChange() {},
+        barsBackground: createElement(Visualization, { analyser: null, isPlaying: false, height: '100%' }),
+    }));
+    assert.match(markup, /class="noised-equalizer__plot"><div class="noised-equalizer__background" aria-hidden="true"><div class="noised-visualization/);
+    assert.equal([...markup.matchAll(/role="slider"/g)].length, 2);
+    assert.match(markup, /Reset all bands to 0 dB/);
+});
+
 test('all visualization styles render on the server without audio or canvas access', () => {
     for (const visualStyle of ['phosphor', 'aurora', 'valve', 'matrix']) {
         for (const type of ['waveform', 'spectrum']) {

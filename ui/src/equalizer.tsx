@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import type { ControlDensity } from './types';
 
 export interface EqualizerColors {
@@ -20,6 +20,8 @@ export interface EqualizerProps {
     height?: number;
     density?: ControlDensity;
     className?: string;
+    /** Decorative content behind the bars, excluding the scale, labels and footer. */
+    barsBackground?: ReactNode;
 }
 
 function formatFrequency(frequency: number) {
@@ -42,6 +44,7 @@ export function Equalizer({
     density = 'comfortable',
     height = density === 'compact' ? 128 : 200,
     className = "",
+    barsBackground,
 }: EqualizerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [showDbScale, setShowDbScale] = useState(true);
@@ -88,6 +91,9 @@ export function Equalizer({
                 </span>)}
             </div>}
             <div className="noised-equalizer__plot">
+                {barsBackground != null && <div className="noised-equalizer__background" aria-hidden="true">
+                    {barsBackground}
+                </div>}
                 <div className="noised-equalizer__guides" aria-hidden="true">
                     {scaleTicks.map(value => <span key={value} className="noised-equalizer__guide" data-zero={value === 0 || undefined}
                         style={{ top: `${100 - percentage(value)}%` }} />)}

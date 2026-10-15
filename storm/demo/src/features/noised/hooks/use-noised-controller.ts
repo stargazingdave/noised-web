@@ -4,7 +4,7 @@ import type { NoiseDParams, NoiseType, Range, ThunderParams } from 'noised-storm
 import workletUrl from 'noised-storm/rain.worklet.js?url';
 import wasmUrl from 'noised-storm/noised_dsp.wasm?url';
 import type { OscParam } from '../components/synth/types/osc-param';
-import { cloneNoisedParams, initialNoisedParams, type NoisedPreset, type NoisedPresetId } from '../model/noised-params';
+import { cloneNoisedParams, initialNoisedParams, noisedPresets, type NoisedPreset, type NoisedPresetId } from '../model/noised-params';
 
 export interface NoisedActions {
     setMasterVolume: (value: number) => void;
@@ -39,7 +39,7 @@ function applySnapshot(controller: NoiseDController, params: NoiseDParams) {
     controller.updateThunderParams(params.thunderParams);
 }
 
-export function useNoisedController() {
+export function useCreateNoisedController() {
     const [params, setParams] = useState(() => cloneNoisedParams(initialNoisedParams));
     const paramsRef = useRef(params);
     const controllerRef = useRef<NoiseDController | null>(null);
@@ -54,6 +54,7 @@ export function useNoisedController() {
     const [error, setError] = useState<string | null>(null);
     const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
     const [activePresetId, setActivePresetId] = useState<NoisedPresetId | null>('default');
+    const [presets, setPresets] = useState<NoisedPreset[]>(() => [...noisedPresets]);
 
     useEffect(() => () => {
         ++lifetimeRef.current;
@@ -153,6 +154,12 @@ export function useNoisedController() {
         if (controllerRef.current) applySnapshot(controllerRef.current, next);
     };
 
+    const importPreset = (preset: Omit<NoisedPreset, 'id'>) => {
+        const imported: NoisedPreset = { ...preset, id: `imported-${crypto.randomUUID()}` };
+        setPresets(current => [...current, imported]);
+        loadPreset(imported);
+    };
+
     const toggle = async () => {
         const operation = ++operationRef.current;
         desiredPlaybackRef.current = !desiredPlaybackRef.current;
@@ -199,5 +206,5 @@ export function useNoisedController() {
         } finally { if (lifetime === lifetimeRef.current) setIsExporting(false); }
     };
 
-    return { actions, activePresetId, analyser, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav };
+    return { actions, activePresetId, presets, importPreset, analyser, error, isRunning, isStarting, isExporting, loadPreset, params, toggle, exportWav };
 }

@@ -76,6 +76,7 @@ function App() {
         <Knob {...props} label="Compact gain" density="compact" />
         <section id="compact-eq" aria-label="Compact EQ" style={{ width: 300 }}>
             <Equalizer density="compact" gains={compactGains} freqs={[31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]}
+                barsBackground={<div data-testid="bars-background" style={{ width: '100%', height: '100%', background: 'linear-gradient(90deg, #102a43, #26798e)' }} />}
                 onChange={(index, value) => setCompactGains(current => current.map((gain, i) => i === index ? value : gain))} onReset={setCompactGains} />
         </section>
         <div style={{ width: 300 }}><Visualization {...visualizationProps} /></div>
@@ -158,6 +159,13 @@ try {
         });
     });
     assert.ok(alignment, 'Frequency labels do not align with their faders');
+    assert.ok(await compact.evaluate(section => {
+        const plot = section.querySelector('.noised-equalizer__plot').getBoundingClientRect();
+        const background = section.querySelector('[data-testid="bars-background"]').getBoundingClientRect();
+        const labels = section.querySelector('.noised-equalizer__frequencies').getBoundingClientRect();
+        return background.x === plot.x && background.y === plot.y && background.width === plot.width
+            && background.height === plot.height && background.bottom <= labels.top;
+    }), 'EQ background extends outside its bars area');
     await compact.evaluate(section => { section.style.width = '240px'; });
     await compact.locator('.noised-equalizer__scale').waitFor({ state: 'detached' });
     assert.ok(await compact.evaluate(section => section.scrollWidth <= section.clientWidth));

@@ -31,6 +31,11 @@ try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' });
     const errors = [];
     const visualStyles = ['Phosphor', 'Aurora', 'Valve', 'Matrix'];
+    const selectPreset = async id => {
+        await page.getByRole('button', { name: 'Presets', exact: true }).click();
+        await page.getByRole('combobox', { name: 'Sound preset', exact: true }).selectOption(id);
+        await page.keyboard.press('Escape');
+    };
     const chooseVisualStyle = async name => {
         await page.getByRole('button', { name: 'Visualization styles', exact: true }).click();
         await page.getByRole('menuitemradio', { name, exact: true }).click();
@@ -73,8 +78,9 @@ try {
     assert.equal((await eqToggle.textContent()).trim(), 'EQ');
     const scopeBounds = await page.locator('.storm-scope').boundingBox();
     const playBounds = await page.getByRole('button', { name: 'Play Storm', exact: true }).boundingBox();
-    const volumeBounds = await masterControls.getByRole('slider', { name: 'Volume', exact: true }).boundingBox();
-    assert.ok(scopeBounds.width <= 320 && scopeBounds.height === 72);
+    const volumeBounds = await masterControls.getByRole('slider', { name: 'Master Volume', exact: true }).boundingBox();
+    assert.ok((await page.locator('.storm-visualization-controls').boundingBox()).width <= 330);
+    assert.equal(scopeBounds.height, 128);
     assert.ok(playBounds.x < scopeBounds.x && scopeBounds.x < volumeBounds.x);
     await page.getByRole('button', { name: 'Show frequency bars', exact: true }).click();
     await page.getByRole('img', { name: 'Live frequency bars', exact: true }).waitFor();
@@ -88,10 +94,21 @@ try {
     await page.locator('.noised-visualization[data-style="aurora"]').waitFor();
     await chooseVisualStyle('Phosphor');
     await eqToggle.click();
+    assert.equal(await page.locator('.storm-scope canvas').count(), 1);
+    assert.ok(await masterEq.evaluate(eq => {
+        const plot = eq.querySelector('.noised-equalizer__plot').getBoundingClientRect();
+        const background = eq.querySelector('.noised-equalizer__background').getBoundingClientRect();
+        const labels = eq.querySelector('.noised-equalizer__frequencies').getBoundingClientRect();
+        return Math.abs(background.x - plot.x) < 1 && Math.abs(background.y - plot.y) < 1
+            && Math.abs(background.width - plot.width) < 1 && Math.abs(background.height - plot.height) < 1
+            && background.bottom <= labels.top;
+    }), 'Visualization must stay within the EQ bars area');
+    await player.screenshot({ path: path.join(artifacts, 'player-eq-background-dark.png') });
     const masterBand = masterEq.getByRole('slider').first();
     await masterBand.press('ArrowUp');
     const editedGain = await masterBand.getAttribute('aria-valuenow');
     await page.getByRole('button', { name: 'Hide master EQ', exact: true }).click();
+    assert.deepEqual(await page.locator('.storm-scope').boundingBox(), scopeBounds);
     assert.equal(await masterEq.isVisible(), false);
     await eqToggle.click();
     assert.equal(await masterEq.getByRole('slider').first().getAttribute('aria-valuenow'), editedGain);
@@ -118,7 +135,10 @@ try {
     await page.waitForFunction(() => !document.documentElement.classList.contains('dark'));
     assert.equal(await page.evaluate(() => localStorage.getItem('noised-storm-theme')), 'system');
     await page.getByRole('button', { name: 'Light theme', exact: true }).click();
-    await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('far-storm');
+    await eqToggle.click();
+    await player.screenshot({ path: path.join(artifacts, 'player-eq-background-light.png') });
+    await page.getByRole('button', { name: 'Hide master EQ', exact: true }).click();
+    await selectPreset('far-storm');
     for (const tab of ['Rain', 'Thunder']) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         const eq = page.getByRole('tabpanel').locator('.noised-equalizer');
@@ -128,7 +148,7 @@ try {
         assert.ok(await eq.getByRole('slider').evaluateAll(bands => bands.every(band => band.getAttribute('aria-valuenow') === '0')), tab + ' EQ failed to reset all bands');
     }
     await page.getByRole('tab', { name: 'Rain', exact: true }).click();
-    await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('far-storm');
+    await selectPreset('far-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 0);
     assert.equal(await page.getByRole('button', { name: 'Play Storm' }).getAttribute('aria-pressed'), 'false');
     await page.screenshot({ path: path.join(artifacts, 'demo-desktop.png'), fullPage: true });
@@ -141,6 +161,7 @@ try {
     assert.equal(await page.evaluate(() => window.__stormProbe.messages.filter(message => message.type === 'start').length), 0);
     await page.getByRole('button', { name: 'Play Storm' }).click();
     await page.getByRole('button', { name: 'Pause Storm' }).waitFor({ timeout: 20000 });
+    await page.locator('.storm-scope[data-playing="true"]').waitFor();
     await page.waitForFunction(() => {
         const analyser = window.__stormProbe.analyser;
         if (!analyser) return false;
@@ -153,6 +174,9 @@ try {
         const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
         return pixels.some((value, index) => index % 4 === 3 && value > 0);
     });
+    // An idle trace also has pixels: verify that the waveform actually animates.
+    const waveFrame = await page.locator('.storm-scope canvas').evaluate(canvas => canvas.toDataURL());
+    await page.waitForFunction(previous => document.querySelector('.storm-scope canvas').toDataURL() !== previous, waveFrame);
     await page.getByRole('button', { name: 'Show frequency bars', exact: true }).click();
     await page.getByRole('img', { name: 'Live frequency bars', exact: true }).waitFor();
     await page.waitForFunction(() => {
@@ -160,6 +184,18 @@ try {
         const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
         return pixels.some((value, index) => index % 4 === 3 && value > 0);
     });
+    const barsFrame = await page.locator('.storm-scope canvas').evaluate(canvas => canvas.toDataURL());
+    await page.waitForFunction(previous => document.querySelector('.storm-scope canvas').toDataURL() !== previous, barsFrame);
+    await eqToggle.click();
+    const eqFrame = await page.locator('.storm-scope canvas').evaluate(canvas => canvas.toDataURL());
+    await page.waitForFunction(previous => document.querySelector('.storm-scope canvas').toDataURL() !== previous, eqFrame);
+    assert.equal(await page.locator('.storm-scope canvas').count(), 1);
+    await player.screenshot({ path: path.join(artifacts, 'player-eq-background-playing.png') });
+    const liveBand = masterEq.getByRole('slider').first();
+    await liveBand.press('ArrowUp');
+    assert.equal(await liveBand.getAttribute('aria-valuenow'), '1');
+    await masterEq.getByRole('button', { name: 'Reset all bands to 0 dB', exact: true }).click();
+    await page.getByRole('button', { name: 'Hide master EQ', exact: true }).click();
     assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 1);
     assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
     await page.locator('.storm-visualization-controls').screenshot({ path: path.join(artifacts, 'frequency-bars.png') });
@@ -177,9 +213,9 @@ try {
     await chooseVisualStyle('Phosphor');
     assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 1);
     assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
-    await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('close-storm');
+    await selectPreset('close-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
-    const master = masterControls.getByRole('textbox', { name: 'Volume', exact: true });
+    const master = masterControls.getByRole('textbox', { name: 'Master Volume', exact: true });
     await master.fill('0'); await master.press('Enter');
     await page.waitForFunction(() => {
         const analyser = window.__stormProbe.analyser;
@@ -194,25 +230,62 @@ try {
     await page.getByRole('switch', { name: 'Rain enabled' }).click();
     assert.equal(await page.getByRole('tab', { name: 'Rain', exact: true }).getAttribute('aria-selected'), 'true');
     await page.getByRole('button', { name: 'Pause Storm' }).click();
+    assert.equal(await page.locator('.storm-scope').getAttribute('data-playing'), 'false');
     const starts = await page.evaluate(() => window.__stormProbe.messages.filter(message => message.type === 'start').length);
-    await page.getByRole('combobox', { name: 'Sound preset' }).selectOption('far-storm');
+    await selectPreset('far-storm');
     assert.equal(await page.evaluate(() => window.__stormProbe.messages.filter(message => message.type === 'start').length), starts);
 
     await page.getByRole('tab', { name: 'Rain', exact: true }).click();
     await page.getByRole('textbox', { name: 'Rate', exact: true }).fill('120');
     await page.getByRole('textbox', { name: 'Rate', exact: true }).press('Enter');
+    await page.getByRole('button', { name: 'Play Storm', exact: true }).click();
+    await page.getByRole('button', { name: 'Pause Storm', exact: true }).waitFor();
     const jsonDownload = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Download parameters as JSON' }).click();
+    await page.getByRole('button', { name: 'Presets', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Preset name', exact: true }).fill('Test Storm');
+    await page.getByRole('dialog', { name: 'Presets', exact: true }).screenshot({ path: path.join(artifacts, 'preset-tool-light.png') });
+    await page.getByRole('button', { name: 'Save preset', exact: true }).click();
     const parameters = await jsonDownload;
     await parameters.saveAs(path.join(artifacts, parameters.suggestedFilename()));
-    assert.equal(JSON.parse(await readFile(path.join(artifacts, parameters.suggestedFilename()), 'utf8')).rainParams.dropRate, 120);
+    const savedPreset = JSON.parse(await readFile(path.join(artifacts, parameters.suggestedFilename()), 'utf8'));
+    assert.equal(savedPreset.name, 'Test Storm');
+    assert.equal(savedPreset.params.rainParams.dropRate, 120);
+    savedPreset.params.masterVolume = 0.37;
+    savedPreset.params.rainParams.dropRate = 77;
+    await page.getByLabel('Load preset file').setInputFiles({ name: 'test-storm.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(savedPreset)) });
+    await page.getByText('Loaded Test Storm', { exact: true }).waitFor();
+    const importedId = await page.getByRole('combobox', { name: 'Sound preset', exact: true }).inputValue();
+    assert.ok(importedId.startsWith('imported-'));
+    assert.equal(await page.evaluate(() => window.__stormProbe.contexts), 1);
+    assert.equal(await page.evaluate(() => window.__stormProbe.worklets), 1);
+    assert.equal(await page.getByRole('button', { name: 'Pause Storm', exact: true }).getAttribute('aria-pressed'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.getByRole('textbox', { name: 'Master Volume', exact: true }).inputValue(), '0.37');
+    assert.equal(await page.getByRole('textbox', { name: 'Rate', exact: true }).inputValue(), '77.0');
+    await selectPreset('default');
+    await selectPreset(importedId);
+    assert.equal(await page.getByRole('textbox', { name: 'Master Volume', exact: true }).inputValue(), '0.37');
+    await page.getByRole('button', { name: 'Presets', exact: true }).click();
+    await page.getByLabel('Load preset file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
+    await page.getByRole('alert').waitFor();
+    assert.equal(await page.getByRole('combobox', { name: 'Sound preset', exact: true }).inputValue(), importedId);
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    const exportLength = page.getByRole('spinbutton', { name: 'Length (seconds)', exact: true });
+    await exportLength.fill('0');
+    assert.equal(await page.getByRole('button', { name: 'Download WAV', exact: true }).isDisabled(), true);
+    await exportLength.fill('2');
+    await page.getByRole('dialog', { name: 'Export audio', exact: true }).screenshot({ path: path.join(artifacts, 'export-tool-light.png') });
     const wavDownload = page.waitForEvent('download', { timeout: 60000 });
-    await page.getByRole('button', { name: 'Download 10-second WAV' }).click();
+    await page.getByRole('button', { name: 'Download WAV', exact: true }).click();
     const audio = await wavDownload;
     await audio.saveAs(path.join(artifacts, audio.suggestedFilename()));
     const wav = await readFile(path.join(artifacts, audio.suggestedFilename()));
     assert.equal(wav.subarray(0, 4).toString(), 'RIFF');
     assert.ok(wav.length > 100000);
+    assert.equal(wav.readUInt32LE(40), 2 * wav.readUInt32LE(24) * 2 * 2);
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Pause Storm', exact: true }).click();
     await page.getByRole('button', { name: 'Play Storm' }).waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('tab', { name: 'Rain', exact: true }).click();
@@ -245,6 +318,23 @@ try {
     for (const width of [320, 390, 768, 1024, 1100, 1101, 1280, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page.getByRole('button', { name: 'Show master EQ', exact: true }).click();
+        const eqSize = await page.locator('.storm-scope').boundingBox();
+        assert.ok((await page.locator('.storm-visualization-controls').boundingBox()).width <= 330);
+        assert.ok(eqSize.height >= 128);
+        assert.ok(await masterEq.getByRole('slider').evaluateAll(sliders => sliders.every(slider => {
+            const rect = slider.getBoundingClientRect();
+            const scope = slider.closest('.storm-scope').getBoundingClientRect();
+            return rect.left >= scope.left && rect.right <= scope.right && rect.top >= scope.top && rect.bottom <= scope.bottom;
+        })), 'EQ clips at ' + width);
+        if (width <= 390) {
+            await player.screenshot({ path: path.join(artifacts, `player-eq-${width}.png`) });
+            for (const [tool, label] of [['Presets', 'Presets'], ['Export', 'Export audio']]) {
+                await page.getByRole('button', { name: tool, exact: true }).click();
+                const panel = await page.getByRole('dialog', { name: label, exact: true }).boundingBox();
+                assert.ok(panel.x >= 0 && panel.x + panel.width <= width + 1, tool + ' overflows at ' + width);
+                await page.keyboard.press('Escape');
+            }
+        }
         for (const tab of ['Rain', 'Thunder']) {
             await page.getByRole('tab', { name: tab }).click();
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), tab + ' overflows at ' + width);
@@ -268,6 +358,9 @@ try {
     assert.equal(await page.getByRole('tab', { name: 'Thunder', exact: true }).getAttribute('aria-selected'), 'true');
     await page.keyboard.press('Home');
     assert.equal(await page.getByRole('tab', { name: 'Rain', exact: true }).getAttribute('aria-selected'), 'true');
+    await page.evaluate(() => window.scrollTo(0, 500));
+    assert.ok((await page.getByRole('navigation', { name: 'Main navigation' }).boundingBox()).y >= 7);
+    await page.evaluate(() => window.scrollTo(0, 0));
     assert.equal(await page.getByRole('alert').count(), 0);
     assert.deepEqual(errors, []);
     console.log('UI integration passed: icon controls, system/light/dark themes, persistent master controls, tab switches and keyboard navigation, audio playback, presets, JSON/WAV downloads and responsive layouts.');

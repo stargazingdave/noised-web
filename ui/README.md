@@ -61,6 +61,12 @@ The Storm demo provides an example of these bindings.
   otherwise `onChange(index, value)` is called for each band. Use functional
   state updates in that callback. For ranges excluding zero, reset uses the
   nearest allowed gain.
+  Optional `barsBackground` accepts decorative React content (for example,
+  `<Visualization height="100%" ... />`) behind only the bars area. It is clipped
+  to that area, excluded from accessibility, and does not intercept pointer
+  input. Guides and interactive bars render above it; the dB scale, frequency
+  labels, and Flat button remain outside it. Set its opacity through
+  `.noised-equalizer__background` in your app if desired.
 - **AmpToggleSwitch**: required `checked` and `onChange`; optional `label`,
   `disabled` and `className`. A keyboard-accessible switch with an amp-style lever.
 - **Visualization**: required `analyser` (`AnalyserNode | null`) and `isPlaying`.
