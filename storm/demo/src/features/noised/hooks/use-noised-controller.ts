@@ -3,6 +3,7 @@ import { NoiseDController } from 'noised-storm';
 import type { NoiseDParams, NoiseType, Range, ThunderParams } from 'noised-storm';
 import workletUrl from 'noised-storm/rain.worklet.js?url';
 import wasmUrl from 'noised-storm/noised_dsp.wasm?url';
+import { preparePlaybackContext } from '../model/playback-context';
 import type { OscParam } from '../components/synth/types/osc-param';
 import { cloneNoisedParams, initialNoisedParams, noisedPresets, type NoisedPreset, type NoisedPresetId } from '../model/noised-params';
 
@@ -68,12 +69,17 @@ export function useCreateNoisedController() {
     }, []);
 
     const initialize = async (): Promise<NoiseDController> => {
-        if (controllerRef.current) return controllerRef.current;
-        if (initializationRef.current) return initializationRef.current;
+        const { context: ctx, resumed } = preparePlaybackContext(audioContextRef.current);
+        audioContextRef.current = ctx;
+        if (controllerRef.current) {
+            await resumed;
+            return controllerRef.current;
+        }
+        if (initializationRef.current) {
+            await resumed;
+            return initializationRef.current;
+        }
         const lifetime = lifetimeRef.current;
-        const ctx = audioContextRef.current ??= new AudioContext();
-        // Resume directly from the button interaction, before asset loading.
-        const resumed = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
         const pending = (async () => {
             await resumed;
             const controller = await NoiseDController.createWasm(ctx, paramsRef.current, { workletUrl, wasmUrl });
